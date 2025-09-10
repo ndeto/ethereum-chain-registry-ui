@@ -15,8 +15,8 @@ import { fetchChainDataById, fetchChainDataFromCaip2 } from '@/lib/registry';
 
 export default function Caip2Lookup() {
   const { toast } = useToast();
-  const [identifier, setIdentifier] = useState(''); // e.g., eip155:1
-  const [hashInput, setHashInput] = useState(''); // bytes32
+  const [identifier, setIdentifier] = useState('');
+  const [hashInput, setHashInput] = useState('');
   const [byIdData, setByIdData] = useState<any>(null);
   const [byIdExists, setByIdExists] = useState<boolean | null>(null);
   const [byHashData, setByHashData] = useState<any>(null);
@@ -212,4 +212,3 @@ export default function Caip2Lookup() {
     </div>
   );
 }
-

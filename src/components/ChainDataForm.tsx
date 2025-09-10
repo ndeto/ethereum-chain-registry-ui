@@ -168,14 +168,32 @@ const ChainDataForm: React.FC = () => {
     }
   };
 
-  // Keep network/account info in sync if the user changes them in the wallet
+  // Initialize from already-authorized wallet, and keep in sync on changes
   useEffect(() => {
     const eth = (window as any)?.ethereum;
-    if (!eth?.on) return;
+    if (!eth) return;
+
+    // Initial sync without prompting the user
+    (async () => {
+      try {
+        const accounts: string[] = await eth.request?.({ method: 'eth_accounts' });
+        if (accounts?.length) {
+          setAccount(accounts[0]);
+          setIsConnected(true);
+        }
+        const provider = new ethers.BrowserProvider(eth);
+        const network = await provider.getNetwork();
+        setNetworkName(network.name || 'unknown');
+        setChainIdHex(`0x${network.chainId.toString(16)}`);
+      } catch {
+        // ignore
+      }
+    })();
+
+    if (!eth.on) return;
 
     const handleChainChanged = (_chainId: string) => {
       setChainIdHex(_chainId);
-      // Refresh provider network name
       const provider = new ethers.BrowserProvider(eth);
       provider.getNetwork().then((n) => setNetworkName(n.name || 'unknown')).catch(() => {});
     };
@@ -272,7 +290,8 @@ const ChainDataForm: React.FC = () => {
         settlementChainId: chainData.settlementChainId.toString(),
       });
 
-      const tx = await contract.register(chainData);
+      // Demo UI: call the unrestricted demoRegister entrypoint
+      const tx = await contract.demoRegister(chainData);
       
       toast({
         title: "Transaction Submitted",
@@ -314,7 +333,7 @@ const ChainDataForm: React.FC = () => {
       } else if (error.message?.includes('ChainNameEmpty')) {
         errorMessage = "Chain name cannot be empty.";
       } else if (error.message?.includes('Ownable: caller is not the owner')) {
-        errorMessage = "Only the contract owner can register chains.";
+        errorMessage = "Owner-gated register: connect owner wallet or use demoRegister.";
       }
       
       toast({
@@ -357,7 +376,7 @@ const ChainDataForm: React.FC = () => {
             <span className="text-primary-foreground font-medium">Chain Registration</span>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-            ERC-7785 Chain Registry
+            ERC-7785 Chain Registry (Demo)
           </h1>
           <p className="text-muted-foreground text-lg">
             Enter ChainData struct parameters to compute the 32-byte ERC-7785 chain identifier
@@ -448,8 +467,8 @@ const ChainDataForm: React.FC = () => {
                 <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                   <div className="text-sm text-amber-700 dark:text-amber-400">
-                    <strong>Note:</strong> Only the contract owner can register chains. 
-                    Make sure you're connected with the owner wallet.
+                    <strong>Demo mode:</strong> This UI calls <code className="font-mono">demoRegister</code>, which is unrestricted for demos.
+                    On production deployments, use the owner‑gated <code className="font-mono">register</code> function.
                   </div>
                 </div>
                 
@@ -467,7 +486,7 @@ const ChainDataForm: React.FC = () => {
                   ) : (
                     <>
                       <Hash className="h-4 w-4 mr-2" />
-                      Register Chain & Compute Hash
+                      Register (Demo) & Compute Hash
                     </>
                   )}
                 </Button>

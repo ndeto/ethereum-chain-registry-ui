@@ -1,7 +1,7 @@
 export const metadata = {
-  title: 'ChainData Hash Computer - Solidity Struct Hash Generator',
+  title: 'ERC‑7785 Registry Demo — Register, Assign, Resolve (CAIP‑2)',
   description:
-    'Professional tool for computing 32-byte hashes from Solidity ChainData struct parameters. Enter blockchain data and get cryptographic hash results.',
+    'Demo UI for the ERC‑7785 Chain Registry and Resolver. Register ChainData, assign human labels, resolve to chain IDs, and inspect CAIP‑2 identifiers and hashes.',
 };
 
 import '@/index.css';

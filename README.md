@@ -18,7 +18,14 @@ Open http://localhost:3000.
 
 ## Environment
 
-Create `.env.local` with your deployed contract addresses (defaults provided below):
+This UI works against any ERC‑7785 Registry + Resolver you deploy. The app reads contract addresses from env and will error if they are missing.
+
+Quick setup:
+
+1) Copy the template: `cp .env.example .env.local`
+2) Edit `.env.local` to point at your contracts (or keep the provided Sepolia defaults)
+
+Required vars (client‑visible):
 
 ```
 # Sepolia registry address (IChainRegistry)
@@ -34,14 +41,28 @@ NEXT_PUBLIC_CAIP2_CONTRACT_ADDRESS=0x02C9686bfc83aAA29fc19f8Ff39887d54B4Ef57a
 NEXT_PUBLIC_SEPOLIA_RPC_URLS=https://ethereum-sepolia.publicnode.com,https://rpc.sepolia.org
 ```
 
-These vars are client‑visible; do not put secrets here. To use your own contracts on this UI, use the scripts [here](https://github.com/unruggable-labs/erc-7785-registry/tree/57e9aa2fab7f2c9b5efbb27ad3f56b61f68fa2e3/deploy) and then set the `env.local` vars:
+Notes:
+- These vars are client‑visible; do not put secrets here.
+- The app throws at startup if any required address is unset.
+- You can deploy your own contracts with the scripts here, then set the env vars above:
+  https://github.com/unruggable-labs/erc-7785-registry/tree/57e9aa2fab7f2c9b5efbb27ad3f56b61f68fa2e3/deploy
+
+### Use Your Own Deployments
+
+If you want to run this UI against your own contracts:
+
+- Deploy the Registry and Resolver (see deploy scripts linked above)
+- Take the deployed addresses and place them in `.env.local` as shown
+- Restart the dev server to pick up the new env
+
+That’s it — the Register/Assign/Resolve/CAIP‑2 pages will now use your contracts.
 
 
 ## Pages & Flow
 
 ### Register — `/`
 
-Owner‑only UI to call `registry.register(ChainData)` on Sepolia. Fields:
+Demo UI calls `registry.demoRegister(ChainData)` (unrestricted) for convenience. On production, restrict to `register` (owner‑only). Fields:
 
 - chainName: lowercase slug, e.g., `optimism`, `base`, `arbitrum`, testnets like `optimism-sepolia`
 - settlementChainId: L1 chain id (decimal), e.g., `1` for Ethereum mainnet
@@ -52,18 +73,18 @@ Owner‑only UI to call `registry.register(ChainData)` on Sepolia. Fields:
 - coinType: SLIP‑44 coin type; for EVM use `60` (ABI expects `uint256`)
 
 Notes:
-- Requires wallet connection and Sepolia. Only the registry owner can register.
+- Requires wallet connection and Sepolia. Demo endpoint is open; use `register` on production.
 - After confirmation, the page shows the emitted chainId (bytes32).
 
 ### Assign — `/assign`
 
-Owner‑only UI to call `resolver.assign(label, chainId)`:
+Demo UI calls `resolver.demoAssign(label, chainId)` (unrestricted). On production, restrict to `assign` (owner‑only):
 
 - Label: human label (lowercase). Full name is `<label>.cid.eth`.
 - Chain ID: 32‑byte hex string (0x + 64 hex) produced by registering ChainData.
 - Extras: “Check Current Mapping” uses `computeNode(label)` + `nodeToChainId(node)` to show existing assignment.
 
-Requires wallet connection and Sepolia. Only the resolver owner can assign.
+Requires wallet connection and Sepolia. Demo endpoint is open; use `assign` on production.
 
 ### Resolve — `/resolve`
 

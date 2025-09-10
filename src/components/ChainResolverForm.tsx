@@ -428,8 +428,6 @@ const ChainResolverForm: React.FC = () => {
                   <div><strong>Namespace:</strong> {resolvedChainData.chainNamespace}</div>
                   <div><strong>Reference:</strong> {resolvedChainData.chainReference}</div>
                   <div><strong>Coin Type:</strong> {String(resolvedChainData.coinType)}</div>
-                  <div className="pt-2"><strong>CAIP-2 Identifier:</strong> <code className="font-mono">{caip2Identifier}</code></div>
-                  <div><strong>CAIP-2 Hash:</strong> <code className="font-mono">{caip2Hash}</code></div>
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground">Loading chain data…</div>

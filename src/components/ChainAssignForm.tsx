@@ -83,7 +83,26 @@ export default function ChainAssignForm() {
 
   useEffect(() => {
     const eth = (window as any)?.ethereum;
-    if (!eth?.on) return;
+    if (!eth) return;
+
+    // Initial sync for already-authorized wallets
+    (async () => {
+      try {
+        const accounts: string[] = await eth.request?.({ method: 'eth_accounts' });
+        if (accounts?.length) {
+          setAccount(accounts[0]);
+          setIsConnected(true);
+        }
+        const provider = new ethers.BrowserProvider(eth);
+        const network = await provider.getNetwork();
+        setNetworkName(network.name || 'unknown');
+        setChainIdHex(`0x${network.chainId.toString(16)}`);
+      } catch {
+        // ignore
+      }
+    })();
+
+    if (!eth.on) return;
     const onChain = (_chainId: string) => {
       setChainIdHex(_chainId);
       const provider = new ethers.BrowserProvider(eth);
@@ -150,7 +169,8 @@ export default function ChainAssignForm() {
       }
       const signer = await provider.getSigner();
       const resolver = new ethers.Contract(address, CHAIN_RESOLVER_ABI, signer);
-      const tx = await resolver.assign(labelValue, chainIdValue);
+      // Demo UI: use unrestricted demoAssign entrypoint
+      const tx = await resolver.demoAssign(labelValue, chainIdValue);
       toast({ title: 'Transaction Submitted', description: 'Waiting for confirmation…' });
       await tx.wait();
       toast({ title: 'Assigned', description: 'Label assigned to chainId in resolver.' });
@@ -229,7 +249,7 @@ export default function ChainAssignForm() {
                 <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                   <div className="text-sm text-amber-700 dark:text-amber-400">
-                    Only the resolver owner can assign mappings. Ensure the resolver address is set correctly.
+                    Demo mode: uses <code className="font-mono">demoAssign</code> (unrestricted). Do not use on production deployments.
                   </div>
                 </div>
 

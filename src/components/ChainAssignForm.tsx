@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,12 +11,19 @@ import { ethers } from 'ethers';
 import { AlertTriangle, CheckCircle, Link as LinkIcon, Loader2, ShieldCheck, Wallet } from 'lucide-react';
 import { CHAIN_RESOLVER_ABI } from '@/lib/abis';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
+import { withSepoliaProvider } from '@/lib/rpc';
 
 const TARGET_NETWORK_NAME = 'Sepolia';
 const TARGET_CHAIN_ID_HEX = '0xaa36a7';
 const TARGET_CHAIN_ID_DECIMAL = BigInt(TARGET_CHAIN_ID_HEX);
 
-const isBytes32 = (value: string) => /^0x[a-fA-F0-9]{64}$/.test(value || '');
+const isBytes32 = (value: string) => /^0x[a-f0-9]{64}$/.test((value || '').toLowerCase());
+
+function normalizeBytes32(input: string): string {
+  let v = (input || '').trim().toLowerCase();
+  if (/^[0-9a-f]{64}$/.test(v)) v = `0x${v}`;
+  return v;
+}
 
 export default function ChainAssignForm() {
   const { toast } = useToast();
@@ -30,6 +38,8 @@ export default function ChainAssignForm() {
   const [submitting, setSubmitting] = useState(false);
   const [checking, setChecking] = useState(false);
   const [currentMapping, setCurrentMapping] = useState<string>('');
+  const [assigned, setAssigned] = useState<boolean>(false);
+  const [lastAssignedLabel, setLastAssignedLabel] = useState<string>('');
 
   const connectWallet = async () => {
     try {
@@ -102,6 +112,15 @@ export default function ChainAssignForm() {
       }
     })();
 
+    // Prefill from query params if present (no Next hook dependency)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qLabel = params.get('label');
+      const qChainId = params.get('chainId');
+      if (qLabel && !labelValue) setLabelValue(qLabel.trim().toLowerCase());
+      if (qChainId && !chainIdValue) setChainIdValue(normalizeBytes32(qChainId));
+    } catch {}
+
     if (!eth.on) return;
     const onChain = (_chainId: string) => {
       setChainIdHex(_chainId);
@@ -170,13 +189,22 @@ export default function ChainAssignForm() {
       const signer = await provider.getSigner();
       const resolver = new ethers.Contract(address, CHAIN_RESOLVER_ABI, signer);
       // Demo UI: use unrestricted demoAssign entrypoint
-      const tx = await resolver.demoAssign(labelValue, chainIdValue);
+      const successLabel = labelValue;
+      const tx = await resolver.demoAssign(successLabel, chainIdValue);
       toast({ title: 'Transaction Submitted', description: 'Waiting for confirmation…' });
-      await tx.wait();
+      try {
+        await withSepoliaProvider(async (readProvider) => readProvider.waitForTransaction(tx.hash));
+      } catch {
+        await tx.wait();
+      }
       toast({ title: 'Assigned', description: 'Label assigned to chainId in resolver.' });
+      setAssigned(true);
+      setLastAssignedLabel(successLabel);
+      setLabelValue('');
+      setChainIdValue('');
       // refresh mapping display
       try {
-        const node: string = await resolver.computeNode(labelValue);
+        const node: string = await resolver.computeNode(successLabel);
         const mapped: string = await resolver.nodeToChainId(node);
         setCurrentMapping(mapped);
       } catch {}
@@ -221,7 +249,7 @@ export default function ChainAssignForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="chainId">Chain ID (bytes32)</Label>
-                <Input id="chainId" placeholder="0x… (64 hex chars)" value={chainIdValue} onChange={(e) => setChainIdValue(e.target.value)} />
+                <Input id="chainId" placeholder="0x… (64 hex chars)" value={chainIdValue} onChange={(e) => setChainIdValue(normalizeBytes32(e.target.value))} />
                 {!chainIdValue || isBytes32(chainIdValue) ? null : (
                   <div className="text-xs text-destructive">Must be a 32-byte hex string (0x + 64 hex)</div>
                 )}
@@ -249,7 +277,7 @@ export default function ChainAssignForm() {
                 <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                   <div className="text-sm text-amber-700 dark:text-amber-400">
-                    Demo mode: uses <code className="font-mono">demoAssign</code> (unrestricted). Do not use on production deployments.
+                    Demo mode uses <code className="font-mono">demoAssign</code> (unrestricted). Avoid on production deployments.
                   </div>
                 </div>
 
@@ -314,10 +342,17 @@ export default function ChainAssignForm() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <code className="font-mono">{(labelValue || '<label>') + '.cid.eth'}</code>
+                <code className="font-mono">{(lastAssignedLabel || labelValue || '<label>') + '.cid.eth'}</code>
                 <span className="opacity-70">→</span>
                 <code className="font-mono break-all">{currentMapping}</code>
               </div>
+              {assigned && (
+                <div className="pt-3">
+                  <Link href={`/resolve${lastAssignedLabel ? `?label=${encodeURIComponent(lastAssignedLabel)}` : ''}`} className="inline-block">
+                    <Button variant="secondary" type="button">Go to Resolve</Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

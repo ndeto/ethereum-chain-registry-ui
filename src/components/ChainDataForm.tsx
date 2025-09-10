@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ethers } from 'ethers';
 import { CHAIN_REGISTRY_ABI } from '@/lib/abis';
 import { CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
+import { withSepoliaProvider } from '@/lib/rpc';
 
-// Hardcoded network/contract configuration
 const TARGET_NETWORK_NAME = 'Sepolia';
 const TARGET_CHAIN_ID_HEX = '0xaa36a7'; // Sepolia
 const TARGET_CHAIN_ID_DECIMAL = BigInt(TARGET_CHAIN_ID_HEX);
@@ -40,6 +41,8 @@ const ChainDataForm: React.FC = () => {
   const [isComputing, setIsComputing] = useState(false);
   const [computedHash, setComputedHash] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [submittedName, setSubmittedName] = useState<string>('');
+  const resultRef = useRef<HTMLDivElement | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState<string>('');
   const [chainIdHex, setChainIdHex] = useState<string>('');
@@ -47,8 +50,9 @@ const ChainDataForm: React.FC = () => {
   const { toast } = useToast();
 
   const handleInputChange = (field: keyof ChainData, value: string) => {
-    const lowerCaseFields: Array<keyof ChainData> = ['chainName', 'chainNamespace', 'chainReference'];
-    const next = lowerCaseFields.includes(field) ? value.toLowerCase() : value;
+    const v = value.trim();
+    const lowerCaseFields: Array<keyof ChainData> = ['chainName', 'chainNamespace', 'chainReference', 'rollupContract'];
+    const next = lowerCaseFields.includes(field) ? v.toLowerCase() : v;
     setFormData(prev => ({ ...prev, [field]: next }));
   };
 
@@ -69,7 +73,6 @@ const ChainDataForm: React.FC = () => {
 
   const connectWallet = async () => {
     try {
-      // Ensure an EIP-1193 provider (e.g., MetaMask) is available
       const eth = (window as any)?.ethereum;
       if (!eth) {
         toast({
@@ -80,14 +83,12 @@ const ChainDataForm: React.FC = () => {
         return;
       }
 
-      // Request accounts explicitly to trigger wallet UI
       await eth.request?.({ method: "eth_requestAccounts" });
 
       const provider = new ethers.BrowserProvider(eth);
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
 
-      // Fetch and store current network info
       const network = await provider.getNetwork();
       const currentChainIdHex = `0x${network.chainId.toString(16)}`;
       setChainIdHex(currentChainIdHex);
@@ -292,13 +293,22 @@ const ChainDataForm: React.FC = () => {
 
       // Demo UI: call the unrestricted demoRegister entrypoint
       const tx = await contract.demoRegister(chainData);
-      
+
       toast({
         title: "Transaction Submitted",
         description: "Waiting for transaction confirmation..."
       });
 
-      const receipt = await tx.wait();
+      // Wait for receipt using a read-only provider to avoid wallet RPC rate limits
+      let receipt;
+      try {
+        receipt = await withSepoliaProvider(async (readProvider) => {
+          return readProvider.waitForTransaction(tx.hash);
+        });
+      } catch {
+        // Fallback to signer provider if needed
+        receipt = await tx.wait();
+      }
       
       // Extract the chain ID from the transaction logs
       const chainRegisteredEvent = receipt.logs.find((log: any) => {
@@ -317,6 +327,16 @@ const ChainDataForm: React.FC = () => {
       }
       
       setComputedHash(chainId);
+      setSubmittedName(formData.chainName);
+      setFormData({
+        chainName: '',
+        settlementChainId: '',
+        version: '',
+        rollupContract: '',
+        chainNamespace: '',
+        chainReference: '',
+        coinType: ''
+      });
       
       toast({
         title: "Chain Registered Successfully",
@@ -345,6 +365,15 @@ const ChainDataForm: React.FC = () => {
       setIsComputing(false);
     }
   };
+
+  // Scroll to the result section once it's rendered
+  useEffect(() => {
+    if (computedHash && resultRef.current) {
+      try {
+        resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {}
+    }
+  }, [computedHash]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(computedHash);
@@ -521,7 +550,7 @@ const ChainDataForm: React.FC = () => {
         </Card>
 
         {computedHash && (
-          <Card className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
+          <Card ref={resultRef} className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-primary" />
@@ -553,6 +582,28 @@ const ChainDataForm: React.FC = () => {
                       <Copy className="h-4 w-4" />
                     )}
                   </Button>
+                </div>
+                {submittedName && (
+                  <div className="text-sm text-muted-foreground">
+                    Suggested label: <code className="font-mono">{submittedName}</code> → Full name <code className="font-mono">{submittedName}.cid.eth</code>
+                  </div>
+                )}
+                <div className="pt-2">
+                  <Link
+                    href={(() => {
+                      const hasParams = Boolean(submittedName || computedHash);
+                      if (!hasParams) return '/assign';
+                      const params = new URLSearchParams();
+                      if (submittedName) params.set('label', submittedName);
+                      if (computedHash) params.set('chainId', computedHash);
+                      return `/assign?${params.toString()}`;
+                    })()}
+                    className="inline-block"
+                  >
+                    <Button variant="secondary" type="button">
+                      Go to Assign
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>

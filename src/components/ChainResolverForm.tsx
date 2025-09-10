@@ -13,7 +13,6 @@ import { fetchChainDataById } from '@/lib/registry';
 import { buildCaip2Identifier, computeCaip2HashOnChain } from '@/lib/caip2';
 import { Loader2, Search, Wallet, AlertTriangle, CheckCircle, ArrowRight, Copy } from 'lucide-react';
 
-// Hardcoded Resolver config (update with your deployed resolver)
 const TARGET_NETWORK_NAME = 'Sepolia';
 const TARGET_CHAIN_ID_HEX = '0xaa36a7'; // Sepolia
 const TARGET_CHAIN_ID_DECIMAL = BigInt(TARGET_CHAIN_ID_HEX);
@@ -70,7 +69,6 @@ const ChainResolverForm: React.FC = () => {
       setChainIdHex(`0x${network.chainId.toString(16)}`);
       toast({ title: 'Wallet Connected', description: `Connected to ${address.slice(0, 6)}...${address.slice(-4)}` });
     } catch (e: any) {
-      // Log detailed wallet connection error for debugging
       console.error('[Resolver] connectWallet error', {
         code: e?.code,
         reason: e?.reason,
@@ -131,7 +129,6 @@ const ChainResolverForm: React.FC = () => {
   useEffect(() => {
     const eth = (window as any)?.ethereum;
     if (!eth) return;
-    // Initialize without prompting if already authorized
     (async () => {
       try {
         const accounts: string[] = await eth.request?.({ method: 'eth_accounts' });
@@ -159,6 +156,11 @@ const ChainResolverForm: React.FC = () => {
     };
     eth.on('chainChanged', onChain);
     eth.on('accountsChanged', onAccounts);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qLabel = params.get('label');
+      if (qLabel) setInputName(qLabel.toLowerCase());
+    } catch {}
     return () => {
       eth.removeListener?.('chainChanged', onChain);
       eth.removeListener?.('accountsChanged', onAccounts);
@@ -223,7 +225,6 @@ const ChainResolverForm: React.FC = () => {
           data: regErr?.data,
           error: regErr,
         });
-        // Handle empty result (RPC returned 0x) as not found
         if (regErr?.code === 'BAD_DATA' && (regErr?.value === '0x' || regErr?.info?.signature?.includes('chainData'))) {
           setChainDataExists(false);
           setResolvedChainData(null);
@@ -232,7 +233,6 @@ const ChainResolverForm: React.FC = () => {
         }
       }
     } catch (e: any) {
-      // Detailed contract error logging
       console.error('[Resolver] resolution error', {
         code: e?.code,
         reason: e?.reason,

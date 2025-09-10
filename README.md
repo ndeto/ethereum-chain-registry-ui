@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000 (Flow page).
 
 ## Environment
 
@@ -60,7 +60,11 @@ That’s it — the Register/Assign/Resolve/CAIP‑2 pages will now use your con
 
 ## Pages & Flow
 
-### Register — `/`
+### Flow — `/`
+
+Landing page with links to Register, Assign, Resolve, and CAIP‑2.
+
+### Register — `/register`
 
 Demo UI calls `registry.demoRegister(ChainData)` (unrestricted) for convenience. On production, restrict to `register` (owner‑only). Fields:
 

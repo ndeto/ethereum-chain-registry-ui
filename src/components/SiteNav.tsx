@@ -26,6 +26,13 @@ export default function SiteNav() {
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
+              <Link href="/resolve" legacyBehavior passHref>
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Resolve
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
               <Link href="/register" legacyBehavior passHref>
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Register
@@ -36,13 +43,6 @@ export default function SiteNav() {
               <Link href="/assign" legacyBehavior passHref>
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Assign
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/resolve" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Resolve
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>

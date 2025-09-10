@@ -11,14 +11,39 @@ export default function FlowGuide() {
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-semibold">ERC-7785 Flow</h1>
-          <p className="text-sm text-muted-foreground">Register → Assign → Resolve (optionally with CAIP‑2)</p>
+          <p className="text-sm text-muted-foreground">Resolve first. Register/Assign when contributing.</p>
         </div>
+
+        {/* Primary CTA: Resolve Popular Chains */}
+        <Card className="border border-primary/10 bg-background/50 shadow-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-primary" />
+              Resolve Popular Chains
+            </CardTitle>
+            <CardDescription>Jump in by resolving a known chain to its ERC‑7785 ID.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Link href={`/resolve?label=${encodeURIComponent('optimism')}&auto=1`} className="inline-block">
+              <Button variant="secondary">optimism</Button>
+            </Link>
+            <Link href={`/resolve?label=${encodeURIComponent('arb1')}&auto=1`} className="inline-block">
+              <Button variant="secondary">arbitrum one</Button>
+            </Link>
+            <Link href={`/resolve?label=${encodeURIComponent('base')}&auto=1`} className="inline-block">
+              <Button variant="secondary">base</Button>
+            </Link>
+            <Link href="/resolve" className="inline-block ml-auto">
+              <Button className="bg-gradient-primary text-primary-foreground">Go to Resolve</Button>
+            </Link>
+          </CardContent>
+        </Card>
 
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5 text-primary" />
-              1) Register ChainData
+              Register ChainData
             </CardTitle>
             <CardDescription>
               Submit ChainData to compute the ERC‑7785 chainId (bytes32).
@@ -26,7 +51,7 @@ export default function FlowGuide() {
           </CardHeader>
           <CardContent>
             <Link href="/register" className="inline-block">
-              <Button>Go to Register</Button>
+              <Button variant="secondary">Go to Register</Button>
             </Link>
           </CardContent>
         </Card>
@@ -35,7 +60,7 @@ export default function FlowGuide() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              2) Assign Label → ID
+              Assign Label → ID
             </CardTitle>
             <CardDescription>
               Map a human label (e.g., base) to the chainId in the resolver.
@@ -43,30 +68,12 @@ export default function FlowGuide() {
           </CardHeader>
           <CardContent>
             <Link href="/assign" className="inline-block">
-              <Button>Go to Assign</Button>
+              <Button variant="secondary">Go to Assign</Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" />
-              3) Resolve + CAIP‑2
-            </CardTitle>
-            <CardDescription>
-              Resolve a label to its chainId and ChainData; inspect CAIP‑2.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Link href="/resolve" className="inline-block">
-              <Button variant="secondary">Go to Resolve</Button>
-            </Link>
-            <Link href="/caip2" className="inline-block">
-              <Button variant="secondary">Go to CAIP‑2</Button>
-            </Link>
-          </CardContent>
-        </Card>
+        
       </div>
     </div>
   );

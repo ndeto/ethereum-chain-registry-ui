@@ -11,11 +11,7 @@ import { ethers } from 'ethers';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { fetchChainDataById } from '@/lib/registry';
 import { buildCaip2Identifier, computeCaip2HashOnChain } from '@/lib/caip2';
-import { Loader2, Search, Wallet, AlertTriangle, CheckCircle, ArrowRight, Copy } from 'lucide-react';
-
-const TARGET_NETWORK_NAME = 'Sepolia';
-const TARGET_CHAIN_ID_HEX = '0xaa36a7'; // Sepolia
-const TARGET_CHAIN_ID_DECIMAL = BigInt(TARGET_CHAIN_ID_HEX);
+import { Loader2, Search, AlertTriangle, CheckCircle, Copy } from 'lucide-react';
 const RESOLVER = CHAIN_RESOLVER_ADDRESS as string;
 
 // ChainResolver ABI subset per provided contract
@@ -27,10 +23,6 @@ const CHAIN_RESOLVER_ABI = [
 
 const ChainResolverForm: React.FC = () => {
   const { toast } = useToast();
-  const [isConnected, setIsConnected] = useState(false);
-  const [account, setAccount] = useState<string>('');
-  const [networkName, setNetworkName] = useState<string>('');
-  const [chainIdHex, setChainIdHex] = useState<string>('');
   const [inputName, setInputName] = useState<string>('');
   const [isResolving, setIsResolving] = useState(false);
   const [nodeHash, setNodeHash] = useState<string>('');
@@ -51,124 +43,25 @@ const ChainResolverForm: React.FC = () => {
     }
   };
 
-  const connectWallet = async () => {
-    try {
-      const eth = (window as any)?.ethereum;
-      if (!eth) {
-        toast({ variant: 'destructive', title: 'MetaMask Required', description: 'Please install MetaMask or a compatible wallet.' });
-        return;
-      }
-      await eth.request?.({ method: 'eth_requestAccounts' });
-      const provider = new ethers.BrowserProvider(eth);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      const network = await provider.getNetwork();
-      setAccount(address);
-      setIsConnected(true);
-      setNetworkName(network.name || 'unknown');
-      setChainIdHex(`0x${network.chainId.toString(16)}`);
-      toast({ title: 'Wallet Connected', description: `Connected to ${address.slice(0, 6)}...${address.slice(-4)}` });
-    } catch (e: any) {
-      console.error('[Resolver] connectWallet error', {
-        code: e?.code,
-        reason: e?.reason,
-        shortMessage: e?.shortMessage,
-        message: e?.message,
-        data: e?.data,
-        error: e,
-      });
-      toast({ variant: 'destructive', title: 'Connection Failed', description: 'Failed to connect to wallet.' });
-    }
-  };
-
-  const switchToTarget = async () => {
-    try {
-      const eth = (window as any)?.ethereum;
-      if (!eth?.request) return;
-      await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: TARGET_CHAIN_ID_HEX }] });
-      const provider = new ethers.BrowserProvider(eth);
-      const network = await provider.getNetwork();
-      setNetworkName(network.name || 'unknown');
-      setChainIdHex(`0x${network.chainId.toString(16)}`);
-      toast({ title: 'Switched Network', description: `Now on ${TARGET_NETWORK_NAME}` });
-    } catch (error: any) {
-      console.error('[Resolver] switchToTarget error', {
-        code: error?.code,
-        reason: error?.reason,
-        shortMessage: error?.shortMessage,
-        message: error?.message,
-        data: error?.data,
-        error,
-      });
-      if (error?.code === 4902) {
-        try {
-          const eth = (window as any)?.ethereum;
-          await eth.request({
-            method: 'wallet_addEthereumChain',
-            params: [
-              {
-                chainId: TARGET_CHAIN_ID_HEX,
-                chainName: TARGET_NETWORK_NAME,
-                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                rpcUrls: ['https://sepolia.infura.io/v3/491fabfa082d4aa9bb1b1688a5f05be4'],
-                blockExplorerUrls: ['https://sepolia.etherscan.io/'],
-              },
-            ],
-          });
-          toast({ title: `${TARGET_NETWORK_NAME} Added`, description: 'Try switching again.' });
-        } catch (addErr: any) {
-          console.error('[Resolver] add chain error', addErr);
-          toast({ variant: 'destructive', title: 'Switch Failed', description: `Could not add/switch to ${TARGET_NETWORK_NAME}.` });
-        }
-      } else {
-        toast({ variant: 'destructive', title: 'Switch Failed', description: 'User rejected or wallet error.' });
-      }
-    }
-  };
+  // No wallet connect logic needed on Resolver page.
 
   useEffect(() => {
-    const eth = (window as any)?.ethereum;
-    if (!eth) return;
-    (async () => {
-      try {
-        const accounts: string[] = await eth.request?.({ method: 'eth_accounts' });
-        if (accounts?.length) {
-          setAccount(accounts[0]);
-          setIsConnected(true);
-        }
-        const provider = new ethers.BrowserProvider(eth);
-        const network = await provider.getNetwork();
-        setNetworkName(network.name || 'unknown');
-        setChainIdHex(`0x${network.chainId.toString(16)}`);
-      } catch (e) {
-        console.warn('[Resolver] init failed', e);
-      }
-    })();
-    if (!eth.on) return;
-    const onChain = (_chainId: string) => {
-      setChainIdHex(_chainId);
-      const provider = new ethers.BrowserProvider(eth);
-      provider.getNetwork().then((n) => setNetworkName(n.name || 'unknown')).catch(() => {});
-    };
-    const onAccounts = (accounts: string[]) => {
-      setAccount(accounts?.[0] || '');
-      setIsConnected(!!accounts?.[0]);
-    };
-    eth.on('chainChanged', onChain);
-    eth.on('accountsChanged', onAccounts);
     try {
       const params = new URLSearchParams(window.location.search);
       const qLabel = params.get('label');
-      if (qLabel) setInputName(qLabel.toLowerCase());
+      const auto = params.get('auto');
+      if (qLabel) {
+        setInputName(qLabel.toLowerCase());
+        if (auto && auto !== '0' && auto !== 'false') {
+          void handleResolve(qLabel);
+        }
+      }
     } catch {}
-    return () => {
-      eth.removeListener?.('chainChanged', onChain);
-      eth.removeListener?.('accountsChanged', onAccounts);
-    };
   }, []);
 
-  const handleResolve = async () => {
-    if (!inputName.trim()) {
+  const handleResolve = async (label?: string) => {
+    const name = (label ?? inputName).trim().toLowerCase();
+    if (!name) {
       toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please enter a chain name, e.g., base' });
       return;
     }
@@ -182,19 +75,19 @@ const ChainResolverForm: React.FC = () => {
 
     try {
       setIsResolving(true);
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const network = await provider.getNetwork();
-      if (network.chainId !== TARGET_CHAIN_ID_DECIMAL) {
-        toast({ variant: 'destructive', title: 'Wrong Network', description: `Please switch to ${TARGET_NETWORK_NAME}.` });
-        return;
-      }
-      const resolver = new ethers.Contract(RESOLVER, CHAIN_RESOLVER_ABI, provider);
-      console.debug('[Resolver] computeNode(label)', { label: inputName });
-      const node: string = await resolver.computeNode(inputName);
+      const { withSepoliaProvider } = await import('@/lib/rpc');
+      const node: string = await withSepoliaProvider(async (provider) => {
+        const resolver = new ethers.Contract(RESOLVER, CHAIN_RESOLVER_ABI, provider);
+        console.debug('[Resolver] computeNode(label)', { label: name });
+        return resolver.computeNode(name);
+      });
       console.debug('[Resolver] computeNode result', { node });
       setNodeHash(node);
       console.debug('[Resolver] nodeToChainId(node)');
-      const chainId: string = await resolver.nodeToChainId(node);
+      const chainId: string = await withSepoliaProvider(async (provider) => {
+        const resolver = new ethers.Contract(RESOLVER, CHAIN_RESOLVER_ABI, provider);
+        return resolver.nodeToChainId(node);
+      });
       console.debug('[Resolver] nodeToChainId result', { chainId });
       setResolvedChainId(chainId);
       toast({ title: 'Resolved', description: 'Chain ID resolved via node mapping.' });
@@ -257,8 +150,39 @@ const ChainResolverForm: React.FC = () => {
             <span className="text-primary-foreground font-medium">Chain Name Resolver</span>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">Resolve Chain Name</h1>
-          <p className="text-muted-foreground text-lg">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID. The full name will be label.cid.eth.</p>
+          <p className="text-muted-foreground text-lg">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID. The full name will be label.cid.eth. Tip: Full flow starts with Register → Assign; this page is a quick resolver.</p>
         </div>
+
+        <Card className="border border-primary/10 bg-background/50 shadow-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-primary" />
+              Popular Chains
+            </CardTitle>
+            <CardDescription>Quickly resolve common networks.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { text: 'optimism', value: 'optimism' },
+                { text: 'arbitrum one', value: 'arb1' },
+                { text: 'base', value: 'base' },
+              ].map((c) => (
+                <Button
+                  key={c.text}
+                  variant="secondary"
+                  type="button"
+                  onClick={() => {
+                    setInputName(c.value);
+                    void handleResolve(c.value);
+                  }}
+                >
+                  {c.text}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
@@ -280,49 +204,28 @@ const ChainResolverForm: React.FC = () => {
               </div>
             </div>
 
-            {!isConnected ? (
-              <Button type="button" onClick={connectWallet} className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
-                <Wallet className="h-4 w-4 mr-2" />
-                Connect Wallet
-              </Button>
-            ) : (
-              <>
-                <div className="flex flex-col gap-2 p-3 bg-secondary/50 rounded-lg border border-primary/10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <span className="text-sm text-muted-foreground">Connected: {account.slice(0, 6)}...{account.slice(-4)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">Network: {networkName || 'unknown'} ({chainIdHex || 'n/a'})</div>
-                  {chainIdHex?.toLowerCase() !== TARGET_CHAIN_ID_HEX.toLowerCase() && (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-xs text-amber-700 dark:text-amber-400">Resolver is deployed on {TARGET_NETWORK_NAME}.</div>
-                      <Button size="sm" variant="secondary" type="button" onClick={switchToTarget}>Switch to {TARGET_NETWORK_NAME}</Button>
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <div className="text-sm text-amber-700 dark:text-amber-400">
+                <strong>Quick lookup:</strong> Uses public Sepolia RPCs (no wallet). Full flow: Register → Assign → Resolve.
+              </div>
+            </div>
 
-                <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                  <div className="text-sm text-amber-700 dark:text-amber-400">
-                    <strong>Note:</strong> This uses a view call on the resolver. Ensure the resolver address and ABI match your deployment.
-                  </div>
-                </div>
+            <Button type="button" onClick={() => handleResolve()} disabled={!inputName.trim() || isResolving} className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
+              {isResolving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Resolving...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Resolve Chain ID
+                </>
+              )}
+            </Button>
 
-                <Button type="button" onClick={handleResolve} disabled={!inputName.trim() || isResolving} className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
-                  {isResolving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Resolving...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Resolve Chain ID
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
+            {/* Wallet connection removed — public RPC resolve only */}
           </CardContent>
         </Card>
 
@@ -352,40 +255,22 @@ const ChainResolverForm: React.FC = () => {
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ArrowRight className="h-5 w-5 text-primary" />
                 Human Name → ERC-7785 Identifier
               </CardTitle>
-              <CardDescription>Resolves human-friendly names to ERC‑7785 chain identifiers.</CardDescription>
+              <CardDescription>Resolves human-friendly names to an ERC‑7785 chain identifier.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
-                <span className="opacity-70">→</span>
-                <code className="font-mono break-all">{resolvedChainId}</code>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
+                  <span className="opacity-70">→</span>
+                  <code className="font-mono break-all">{resolvedChainId}</code>
+                </div>
+                <Badge variant="secondary" className="">Hash Length: 66 characters (0x + 64 hex)</Badge>
               </div>
             </CardContent>
           </Card>
         )}
-
-        {resolvedChainId && (
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                Resolution Result
-              </CardTitle>
-              <CardDescription>ERC-7785 Chain ID for the provided reference.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Badge variant="secondary" className="mb-2">Hash Length: 66 characters (0x + 64 hex)</Badge>
-                <div className="flex items-center gap-2 p-4 bg-secondary/50 rounded-lg border border-primary/10">
-                  <code className="flex-1 text-sm font-mono break-all text-foreground">{resolvedChainId}</code>
-                </div>
-              </div>
-            </CardContent>
-        </Card>
-      )}
 
         {nodeHash && (
           <Card className="border border-primary/10 bg-background/50 shadow-none">

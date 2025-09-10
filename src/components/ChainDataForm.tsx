@@ -339,13 +339,13 @@ const ChainDataForm: React.FC = () => {
 
   const inputFields = [
     { key: 'chainName' as keyof ChainData, label: 'Chain Name', type: 'text', placeholder: 'e.g., optimism' },
-    { key: 'settlementChainId' as keyof ChainData, label: 'Settlement Chain ID', type: 'number', placeholder: 'e.g., 10' },
+    { key: 'settlementChainId' as keyof ChainData, label: 'Settlement Chain ID', type: 'number', placeholder: 'e.g., 1' },
     { key: 'version' as keyof ChainData, label: 'Version', type: 'text', placeholder: 'e.g., v1' },
     // Optimism L1 portal contract on Ethereum mainnet (placeholder)
     { key: 'rollupContract' as keyof ChainData, label: 'Rollup Contract', type: 'text', placeholder: 'e.g., 0xbEb5fc579115071764c7423A4f12eDde41f106Ed' },
     { key: 'chainNamespace' as keyof ChainData, label: 'Chain Namespace', type: 'text', placeholder: 'e.g., eip155' },
-    { key: 'chainReference' as keyof ChainData, label: 'Chain Reference', type: 'text', placeholder: 'e.g., optimism' },
-    { key: 'coinType' as keyof ChainData, label: 'Coin Type', type: 'number', placeholder: 'e.g., 60' }
+    { key: 'chainReference' as keyof ChainData, label: 'Chain Reference', type: 'text', placeholder: 'e.g., 10' },
+    { key: 'coinType' as keyof ChainData, label: 'Coin Type', type: 'number', placeholder: 'e.g., 2147483658' }
   ];
 
   return (

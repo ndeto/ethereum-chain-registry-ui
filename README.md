@@ -74,8 +74,7 @@ Resolve a human label to an ERC‑7785 chainId and ChainData:
 - Computes CAIP‑2 identifier and hash (on‑chain hasher) from ChainData.
 - Shows a Contracts card with the resolver address.
 
-Reference: CAIP‑2 and CAIP‑350 in ERC‑7785
-https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier
+Reference: [CAIP‑2 and CAIP‑350 in ERC‑7785](https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier)
 
 ### CAIP‑2 — `/caip2`
 
@@ -87,7 +86,7 @@ Two lookups:
 ## Typical Process
 
 1) Register ChainData on the registry (owner)
-2) Copy the emitted chainId (bytes32)
+2) Copy the emitted chainId (bytes32). Displayed on the UI
 3) Assign `<label>` to that chainId in the resolver (owner)
 4) Resolve `<label>.cid.eth` to verify mapping, and view ChainData + CAIP‑2
 

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { AppKitButton } from '@reown/appkit/react'
+import ZincConnectButton from '@/components/ZincConnectButton'
 
 export default function ZincNav() {
   return (
@@ -20,7 +20,7 @@ export default function ZincNav() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <AppKitButton />
+          <ZincConnectButton />
         </div>
       </div>
     </header>

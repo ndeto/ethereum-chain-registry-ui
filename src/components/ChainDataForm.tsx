@@ -13,7 +13,7 @@ import { CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi';
 import { type Abi, parseEventLogs } from 'viem';
 import { sepolia as viemSepolia } from 'viem/chains';
-import { AppKitButton } from '@reown/appkit/react';
+import ZincConnectButton from '@/components/ZincConnectButton';
 
 const TARGET_NETWORK_NAME = 'Sepolia';
 const TARGET_CHAIN_ID = 11155111; // Sepolia
@@ -173,7 +173,7 @@ const ChainDataForm: React.FC = () => {
           variant: 'destructive',
           title: 'Wrong Network',
           description: `Please switch to ${TARGET_NETWORK_NAME} to register.`,
-        });
+        });        
         return;
       }
 
@@ -347,86 +347,12 @@ const ChainDataForm: React.FC = () => {
           <h1 className="text-4xl font-bold text-primary">
             ERC-7785 Chain Registry (Demo)
           </h1>
-          <p className="text-foreground/90 text-lg leading-relaxed">
-            Enter ChainData struct parameters to compute the 32-byte ERC-7785 chain identifier
+          <p className="text-foreground/90 text-md leading-relaxed">
+            Fill in the fields to compute the 32-byte ERC-7785 chain identifier —
+            {' '}
+            <a className="underline" href="/learn#overview">Learn more</a>
           </p>
         </div>
-        {/* Inputs and Result (explanatory) */}
-        <Card className="border border-primary/10">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2">
-                <Hash className="h-5 w-5 text-primary" />
-                Inputs and Result
-              </CardTitle>
-              <Button
-                size="sm"
-                variant="secondary"
-                type="button"
-                onClick={() => setShowInputsInfo((v) => !v)}
-                aria-expanded={showInputsInfo}
-                aria-controls="inputs-details"
-              >
-                {showInputsInfo ? 'Hide details' : 'Learn more'}
-              </Button>
-            </div>
-            <CardDescription>Fill in the form below to derive a chain identifier.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {showInputsInfo && (
-              <div id="inputs-details" className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li><strong>chainName</strong>: Human chain name (e.g., Base Mainnet).</li>
-                    <li><strong>settlementChainId</strong>: EIP‑155 chain ID of the settlement layer (e.g., 1 for Ethereum).</li>
-                    <li><strong>version</strong>: Spec/format version used in derivation.</li>
-                    <li><strong>rollupContract</strong>: L2 anchor/rollup contract; <code className="font-mono">0x00…00</code> if none.</li>
-                    <li>
-                      <strong>chainNamespace</strong>: <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> namespace
-                      {' '}(e.g., <code className="font-mono">eip155</code>).
-                    </li>
-                    <li>
-                      <strong>chainReference</strong>: <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> reference
-                      {' '}(e.g., <code className="font-mono">8453</code> for Base).
-                    </li>
-                    <li>
-                      <strong>coinType</strong>: ENS coin type (<a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ensdomains/docs/blob/master/ens-improvement-proposals/ensip-11.md">ENSIP‑11</a>);
-                      {' '}derived for EVM (<code className="font-mono">eip155</code>), required otherwise.
-                    </li>
-                  </ul>
-                </div>
-                <pre className="text-xs overflow-auto p-3 rounded-md bg-secondary/50 border border-primary/10"><code>{`// Derivation (conceptual)
-bytes32 chainId = keccak256(
-  abi.encode(
-    chainName,
-    settlementChainId,
-    version,
-    rollupContract,
-    chainNamespace,
-    chainReference
-  )
-);`}</code></pre>
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>
-                    The registry interface defines <code className="font-mono">register(ChainData)</code> and exposes stored entries via
-                    <code className="font-mono"> chainData(bytes32)</code> and helpers. You can view the exposed functions here:
-                  </p>
-                  <p>
-                    <a
-                      href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/interfaces/ChainRegistry.sol"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline"
-                    >
-                      ChainRegistry.sol (GitHub)
-                    </a>
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         <Card className="border border-primary/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -477,7 +403,7 @@ bytes32 chainId = keccak256(
             
             {!isConnected ? (
               <div className="w-full flex justify-center">
-                <AppKitButton />
+                <ZincConnectButton />
               </div>
             ) : (
               <>

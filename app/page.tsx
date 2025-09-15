@@ -6,7 +6,6 @@ export default function Page() {
   return (
     <main className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-8">
-        <RegisterExplainer />
         <ChainDataForm />
         <RegisterPostDemo />
       </div>

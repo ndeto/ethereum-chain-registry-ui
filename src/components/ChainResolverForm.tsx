@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ethers } from 'ethers';
+import { usePublicClient } from 'wagmi';
+import { type Abi } from 'viem';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { fetchChainDataById } from '@/lib/registry';
 import { buildCaip2Identifier, computeCaip2HashOnChain } from '@/lib/caip2';
@@ -23,6 +24,7 @@ const CHAIN_RESOLVER_ABI = [
 
 const ChainResolverForm: React.FC = () => {
   const { toast } = useToast();
+  const publicClient = usePublicClient();
   const [inputName, setInputName] = useState<string>('');
   const [isResolving, setIsResolving] = useState(false);
   const [nodeHash, setNodeHash] = useState<string>('');
@@ -31,6 +33,8 @@ const ChainResolverForm: React.FC = () => {
   const [caip2Identifier, setCaip2Identifier] = useState<string>('');
   const [caip2Hash, setCaip2Hash] = useState<string>('');
   const [chainDataExists, setChainDataExists] = useState<boolean | null>(null);
+  const [showInlineLoading, setShowInlineLoading] = useState<boolean>(false);
+  const SHOW_LEGACY_SECTIONS = false;
 
   const copy = async (value: string, label: string) => {
     try {
@@ -71,23 +75,45 @@ const ChainResolverForm: React.FC = () => {
     }
 
     try {
+      // Clear old results and briefly hide to emphasize reload
+      setResolvedChainData(null);
+      setChainDataExists(null);
+      setCaip2Identifier('');
+      setCaip2Hash('');
+      setNodeHash('');
+      setResolvedChainId('');
+      setShowInlineLoading(true);
+      setTimeout(() => setShowInlineLoading(false), 800);
+
       setIsResolving(true);
-      const { withSepoliaProvider } = await import('@/lib/rpc');
-      const node: string = await withSepoliaProvider(async (provider) => {
-        const resolver = new ethers.Contract(RESOLVER, CHAIN_RESOLVER_ABI, provider);
-        console.debug('[Resolver] computeNode(label)', { label: name });
-        return resolver.computeNode(name);
-      });
+      console.debug('[Resolver] computeNode(label)', { label: name });
+      const node = await (publicClient as any)!.readContract({
+        address: RESOLVER as `0x${string}`,
+        abi: CHAIN_RESOLVER_ABI as unknown as Abi,
+        functionName: 'computeNode',
+        args: [name]
+      }) as string;
       console.debug('[Resolver] computeNode result', { node });
       setNodeHash(node);
       console.debug('[Resolver] nodeToChainId(node)');
-      const chainId: string = await withSepoliaProvider(async (provider) => {
-        const resolver = new ethers.Contract(RESOLVER, CHAIN_RESOLVER_ABI, provider);
-        return resolver.nodeToChainId(node);
-      });
+      const chainId = await (publicClient as any)!.readContract({
+        address: RESOLVER as `0x${string}`,
+        abi: CHAIN_RESOLVER_ABI as unknown as Abi,
+        functionName: 'nodeToChainId',
+        args: [node]
+      }) as string;
       console.debug('[Resolver] nodeToChainId result', { chainId });
       setResolvedChainId(chainId);
       toast({ title: 'Resolved', description: 'Chain ID resolved via node mapping.' });
+
+      // Update URL so the state can be shared/bookmarked
+      try {
+        const params = new URLSearchParams(window.location.search);
+        params.set('label', name);
+        params.set('auto', '1');
+        params.set('chainId', chainId);
+        window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+      } catch {}
 
       // Fetch chain data from Sepolia registry
       try {
@@ -147,9 +173,10 @@ const ChainResolverForm: React.FC = () => {
             <span className="text-xs text-muted-foreground font-medium">Chain Name Resolver</span>
           </div>
           <h1 className="text-4xl font-bold text-primary">Resolve Chain Name</h1>
-          <p className="text-foreground/90 text-lg leading-relaxed">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID. The full name will be label.cid.eth. Tip: Full flow starts with Register → Assign; this page is a quick resolver.</p>
+          <p className="text-foreground/90 text-md leading-relaxed">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID.</p>
         </div>
 
+        {SHOW_LEGACY_SECTIONS && (
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -186,6 +213,7 @@ const ChainResolverForm: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
@@ -206,14 +234,6 @@ const ChainResolverForm: React.FC = () => {
                 <div className="text-xs text-muted-foreground">Full name: <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code></div>
               </div>
             </div>
-
-            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-              <div className="text-sm text-amber-700 dark:text-amber-400">
-                <strong>Quick lookup:</strong> Uses public Sepolia RPCs (no wallet). Full flow: Register → Assign → Resolve.
-              </div>
-            </div>
-
             <Button type="button" onClick={() => handleResolve()} disabled={!inputName.trim() || isResolving} className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
               {isResolving ? (
                 <>
@@ -227,8 +247,64 @@ const ChainResolverForm: React.FC = () => {
                 </>
               )}
             </Button>
+            {(isResolving || showInlineLoading) && (
+              <div className="mt-4 p-4 rounded-md border border-primary/10 bg-secondary/30 animate-pulse">
+                <div className="h-4 bg-secondary/60 rounded w-1/3 mb-3" />
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="h-3 bg-secondary/60 rounded w-full" />
+                  <div className="h-3 bg-secondary/60 rounded w-5/6" />
+                  <div className="h-3 bg-secondary/60 rounded w-2/3" />
+                </div>
+              </div>
+            )}
 
-            {/* Wallet connection removed — public RPC resolve only */}
+            {!isResolving && !showInlineLoading && resolvedChainId && (
+              <div className="mt-4 space-y-4">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
+                  <span className="opacity-70">→</span>
+                  <code className="font-mono break-all">{resolvedChainId}</code>
+                </div>
+
+                {!chainDataExists && chainDataExists !== null ? (
+                  <div className="text-sm text-muted-foreground">No chain data found for this chainId in the registry.</div>
+                ) : resolvedChainData ? (
+                  <div className="text-sm space-y-1 p-4 rounded-md border border-primary/10 bg-secondary/30">
+                    <div><strong>Name:</strong> {resolvedChainData.chainName}</div>
+                    <div><strong>Settlement Chain ID:</strong> {resolvedChainData.settlementChainId?.toString?.() ?? String(resolvedChainData.settlementChainId)}</div>
+                    <div><strong>Version:</strong> {resolvedChainData.version}</div>
+                    <div><strong>Rollup Contract:</strong> {resolvedChainData.rollupContract}</div>
+                    <div><strong>Namespace:</strong> {resolvedChainData.chainNamespace}</div>
+                    <div><strong>Reference:</strong> {resolvedChainData.chainReference}</div>
+                    <div><strong>Coin Type:</strong> {String(resolvedChainData.coinType)}</div>
+                    {(caip2Identifier && caip2Hash) && (
+                      <div className="pt-2 text-xs text-muted-foreground space-y-1">
+                        <div>
+                          CAIP-2: <code className="font-mono">{caip2Identifier}</code>
+                        </div>
+                        <div>
+                          Hash: <code className="font-mono">{caip2Hash}</code>
+                        </div>
+                      </div>
+                    )}
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          try {
+                            navigator.clipboard.writeText(window.location.href);
+                            toast({ title: 'Link copied', description: 'URL copied to clipboard.' });
+                          } catch {}
+                        }}
+                      >
+                        Copy Link
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -254,7 +330,7 @@ const ChainResolverForm: React.FC = () => {
           </CardContent>
         </Card>
 
-        {resolvedChainId && (
+{SHOW_LEGACY_SECTIONS && resolvedChainId && (
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -275,7 +351,7 @@ const ChainResolverForm: React.FC = () => {
           </Card>
         )}
 
-        {nodeHash && (
+{SHOW_LEGACY_SECTIONS && nodeHash && (
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -295,7 +371,7 @@ const ChainResolverForm: React.FC = () => {
           </Card>
         )}
 
-        {resolvedChainId && (
+{SHOW_LEGACY_SECTIONS && resolvedChainId && (
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -324,7 +400,7 @@ const ChainResolverForm: React.FC = () => {
           </Card>
         )}
 
-        {caip2Identifier && caip2Hash && (
+{SHOW_LEGACY_SECTIONS && caip2Identifier && caip2Hash && (
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

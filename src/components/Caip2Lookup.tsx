@@ -6,15 +6,16 @@ import { BookOpen, Copy, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ethers } from 'ethers';
+import { usePublicClient } from 'wagmi';
+import { type Abi } from 'viem';
 import { useToast } from '@/hooks/use-toast';
-import { CHAIN_REGISTRY_ABI } from '@/lib/abis';
-import { CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
-import { withSepoliaProvider } from '@/lib/rpc';
-import { fetchChainDataById, fetchChainDataFromCaip2 } from '@/lib/registry';
+import { CHAIN_REGISTRY_ABI, CAIP2_LIB_ABI } from '@/lib/abis';
+import { CHAIN_REGISTRY_ADDRESS, CAIP2_CONTRACT_ADDRESS } from '@/lib/addresses';
+import { fetchChainDataById } from '@/lib/registry';
 
 export default function Caip2Lookup() {
   const { toast } = useToast();
+  const publicClient = usePublicClient();
   const [identifier, setIdentifier] = useState('');
   const [hashInput, setHashInput] = useState('');
   const [byIdData, setByIdData] = useState<any>(null);
@@ -37,9 +38,27 @@ export default function Caip2Lookup() {
     }
     const [ns, ref] = parts;
     try {
-      const [exists, data] = await fetchChainDataFromCaip2(ns, ref);
-      setByIdExists(Boolean(exists));
-      setByIdData(data);
+      const hash = await (publicClient as any)!.readContract({
+        address: CAIP2_CONTRACT_ADDRESS as `0x${string}`,
+        abi: CAIP2_LIB_ABI as unknown as Abi,
+        functionName: 'computeCaip2Hash',
+        args: [ns, ref]
+      }) as string;
+      const chainId = await (publicClient as any)!.readContract({
+        address: CHAIN_REGISTRY_ADDRESS as `0x${string}`,
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        functionName: 'caip2HashToChainId',
+        args: [hash]
+      }) as string;
+      const data = await (publicClient as any)!.readContract({
+        address: CHAIN_REGISTRY_ADDRESS as `0x${string}`,
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        functionName: 'chainData',
+        args: [chainId]
+      });
+      const notFound = !data?.chainName && String((data as any)?.rollupContract).toLowerCase() === '0x0000000000000000000000000000000000000000';
+      setByIdExists(!notFound);
+      setByIdData(data as any);
     } catch (e) {
       setByIdExists(null);
       setByIdData(null);
@@ -59,22 +78,21 @@ export default function Caip2Lookup() {
       return;
     }
     try {
-      const { chainId, data } = await withSepoliaProvider(async (provider) => {
-        const registry = new ethers.Contract(
-          CHAIN_REGISTRY_ADDRESS,
-          [
-            { type: 'function', name: 'caip2HashToChainId', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ name: '', type: 'bytes32' }] },
-            ...CHAIN_REGISTRY_ABI,
-          ] as const,
-          provider
-        );
-        const id: string = await registry.caip2HashToChainId(h);
-        const { data } = await fetchChainDataById(id);
-        return { chainId: id, data };
+      const id = await (publicClient as any)!.readContract({
+        address: CHAIN_REGISTRY_ADDRESS as `0x${string}`,
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        functionName: 'caip2HashToChainId',
+        args: [h]
+      }) as string;
+      const data = await (publicClient as any)!.readContract({
+        address: CHAIN_REGISTRY_ADDRESS as `0x${string}`,
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        functionName: 'chainData',
+        args: [id]
       });
-      setByHashChainId(chainId);
-      setByHashData(data);
-      const notFound = !data?.chainName && String(data?.rollupContract).toLowerCase() === '0x0000000000000000000000000000000000000000';
+      setByHashChainId(id);
+      setByHashData(data as any);
+      const notFound = !data?.chainName && String((data as any)?.rollupContract).toLowerCase() === '0x0000000000000000000000000000000000000000';
       setByHashExists(!notFound);
     } catch (e) {
       setByHashChainId('');
@@ -97,63 +115,19 @@ export default function Caip2Lookup() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
-        {/* CAIP-2 Context (learn more) */}
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                CAIP‑2 Context & Mapping
-              </CardTitle>
-              <Button
-                size="sm"
-                variant="secondary"
-                type="button"
-                onClick={() => setShowContext((v) => !v)}
-                aria-expanded={showContext}
-                aria-controls="caip2-context"
-              >
-                {showContext ? 'Hide details' : 'Learn more'}
-              </Button>
-            </div>
-            <CardDescription>
-              How CAIP‑2 ties human names, identifiers, and registry data together.
-            </CardDescription>
-          </CardHeader>
-          {showContext && (
-            <CardContent id="caip2-context">
-              <div className="text-sm text-muted-foreground space-y-2">
-                <p>
-                  The <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> identifier is the chain selector in the form
-                  <code className="font-mono"> namespace:reference </code>
-                  (for example, <code className="font-mono">eip155:1</code> for Ethereum mainnet). This page lets you:
-                </p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Resolve a CAIP‑2 identifier to its ChainData via the registry.</li>
-                  <li>Reverse‑lookup from a CAIP‑2 hash to the chainId and ChainData.</li>
-                </ul>
-                <p>
-                  The <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> identifier is already present in <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">ERC‑7930</a> chain‑aware addresses. By incorporating
-                  it into the ERC‑7785 chain identifier, we get a direct way to map an <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">ERC‑7930</a> binary
-                  address back to its network using the chain’s CAIP‑2 identifier, and then fetch the
-                  authoritative ChainData from the registry.
-                </p>
-                <p>
-                  Reference:{' '}
-                  <a
-                    href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    ERC-7785: CAIP-2 and CAIP-350 integration
-                  </a>
-                </p>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
+            <span className="text-xs text-muted-foreground font-medium">Chain Registration</span>
+          </div>
+          <h1 className="text-4xl font-bold text-primary">
+            CAIP-2 Maping
+          </h1>
+          <p className="text-foreground/90 text-md leading-relaxed">
+            Use CAIP-2 attributes to link back to chain data —
+            {' '}
+            <a className="underline" href="/learn#overview">Learn more</a>
+          </p>
+        </div>
         {/* Hash first */}
         <Card className="border border-primary/10">
           <CardHeader>
@@ -252,7 +226,7 @@ export default function Caip2Lookup() {
           </CardContent>
         </Card>
 
-        
+
       </div>
     </div>
   );

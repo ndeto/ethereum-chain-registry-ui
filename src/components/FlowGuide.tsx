@@ -13,8 +13,6 @@ export default function FlowGuide() {
           <h1 className="text-3xl font-semibold">ERC-7785 Flow</h1>
           <p className="text-sm text-muted-foreground">Resolve first. Register/Assign when contributing.</p>
         </div>
-
-        {/* Primary CTA: Resolve Popular Chains */}
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -34,7 +32,7 @@ export default function FlowGuide() {
               <Button variant="secondary">base</Button>
             </Link>
             <Link href="/resolve" className="inline-block ml-auto">
-              <Button className="bg-gradient-primary text-primary-foreground">Go to Resolve</Button>
+              <Button className="bg-primary text-primary-foreground">Go to Resolve</Button>
             </Link>
           </CardContent>
         </Card>

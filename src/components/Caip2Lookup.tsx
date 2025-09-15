@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Copy } from 'lucide-react';
+import { BookOpen, Copy, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,12 +22,17 @@ export default function Caip2Lookup() {
   const [byHashData, setByHashData] = useState<any>(null);
   const [byHashExists, setByHashExists] = useState<boolean | null>(null);
   const [byHashChainId, setByHashChainId] = useState<string>('');
+  const [showContext, setShowContext] = useState(false);
+  const [loadingHash, setLoadingHash] = useState(false);
+  const [loadingId, setLoadingId] = useState(false);
 
   const lookupByIdentifier = async () => {
+    setLoadingId(true);
     const parts = identifier.split(':');
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
       setByIdExists(null);
       setByIdData(null);
+      setLoadingId(false);
       return;
     }
     const [ns, ref] = parts;
@@ -38,15 +43,19 @@ export default function Caip2Lookup() {
     } catch (e) {
       setByIdExists(null);
       setByIdData(null);
+    } finally {
+      setLoadingId(false);
     }
   };
 
   const lookupByHash = async () => {
+    setLoadingHash(true);
     const h = hashInput.trim();
     if (!/^0x[0-9a-fA-F]{64}$/.test(h)) {
       setByHashChainId('');
       setByHashData(null);
       setByHashExists(null);
+      setLoadingHash(false);
       return;
     }
     try {
@@ -71,6 +80,8 @@ export default function Caip2Lookup() {
       setByHashChainId('');
       setByHashData(null);
       setByHashExists(null);
+    } finally {
+      setLoadingHash(false);
     }
   };
 
@@ -86,8 +97,65 @@ export default function Caip2Lookup() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
+        {/* CAIP-2 Context (learn more) */}
+        <Card className="border border-primary/10 bg-background/50 shadow-none">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                CAIP‑2 Context & Mapping
+              </CardTitle>
+              <Button
+                size="sm"
+                variant="secondary"
+                type="button"
+                onClick={() => setShowContext((v) => !v)}
+                aria-expanded={showContext}
+                aria-controls="caip2-context"
+              >
+                {showContext ? 'Hide details' : 'Learn more'}
+              </Button>
+            </div>
+            <CardDescription>
+              How CAIP‑2 ties human names, identifiers, and registry data together.
+            </CardDescription>
+          </CardHeader>
+          {showContext && (
+            <CardContent id="caip2-context">
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>
+                  The <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> identifier is the chain selector in the form
+                  <code className="font-mono"> namespace:reference </code>
+                  (for example, <code className="font-mono">eip155:1</code> for Ethereum mainnet). This page lets you:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Resolve a CAIP‑2 identifier to its ChainData via the registry.</li>
+                  <li>Reverse‑lookup from a CAIP‑2 hash to the chainId and ChainData.</li>
+                </ul>
+                <p>
+                  The <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> identifier is already present in <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">ERC‑7930</a> chain‑aware addresses. By incorporating
+                  it into the ERC‑7785 chain identifier, we get a direct way to map an <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">ERC‑7930</a> binary
+                  address back to its network using the chain’s CAIP‑2 identifier, and then fetch the
+                  authoritative ChainData from the registry.
+                </p>
+                <p>
+                  Reference:{' '}
+                  <a
+                    href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline"
+                  >
+                    ERC-7785: CAIP-2 and CAIP-350 integration
+                  </a>
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
         {/* Hash first */}
-        <Card className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
+        <Card className="border border-primary/10">
           <CardHeader>
             <CardTitle>Lookup by CAIP-2 Hash</CardTitle>
             <CardDescription>Enter 32-byte hash (0x + 64 hex)</CardDescription>
@@ -97,7 +165,16 @@ export default function Caip2Lookup() {
               <Label htmlFor="caip2hash">CAIP-2 Hash</Label>
               <Input id="caip2hash" placeholder="0x…" value={hashInput} onChange={(e) => setHashInput(e.target.value)} />
             </div>
-            <Button type="button" onClick={lookupByHash}>Fetch Chain Data</Button>
+            <Button type="button" onClick={lookupByHash} disabled={loadingHash} aria-busy={loadingHash}>
+              {loadingHash ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Fetching…
+                </>
+              ) : (
+                'Fetch Chain Data'
+              )}
+            </Button>
             {byHashExists === false ? (
               <div className="text-sm text-muted-foreground">No chain data found for this hash.</div>
             ) : byHashData ? (
@@ -127,7 +204,7 @@ export default function Caip2Lookup() {
         </Card>
 
         {/* Identifier second */}
-        <Card className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
+        <Card className="border border-primary/10">
           <CardHeader>
             <CardTitle>Lookup by CAIP-2 Identifier</CardTitle>
             <CardDescription>Enter namespace:reference (e.g., eip155:1)</CardDescription>
@@ -137,7 +214,16 @@ export default function Caip2Lookup() {
               <Label htmlFor="caip2id">Identifier</Label>
               <Input id="caip2id" placeholder="e.g., eip155:1" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
             </div>
-            <Button type="button" onClick={lookupByIdentifier}>Fetch Chain Data</Button>
+            <Button type="button" onClick={lookupByIdentifier} disabled={loadingId} aria-busy={loadingId}>
+              {loadingId ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Fetching…
+                </>
+              ) : (
+                'Fetch Chain Data'
+              )}
+            </Button>
             {byIdExists === false ? (
               <div className="text-sm text-muted-foreground">No chain data found for this identifier.</div>
             ) : byIdData ? (
@@ -166,48 +252,7 @@ export default function Caip2Lookup() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              CAIP‑2 Context & Mapping
-            </CardTitle>
-            <CardDescription>
-              How CAIP‑2 ties human names, identifiers, and registry data together.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>
-                The CAIP‑2 identifier is the chain selector in the form
-                <code className="font-mono"> namespace:reference </code>
-                (for example, <code className="font-mono">eip155:1</code> for Ethereum mainnet). This page lets you:
-              </p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Resolve a CAIP‑2 identifier to its ChainData via the registry.</li>
-                <li>Reverse‑lookup from a CAIP‑2 hash to the chainId and ChainData.</li>
-              </ul>
-              <p>
-                The CAIP‑2 identifier is already present in ERC‑7930 chain‑aware addresses. By incorporating
-                it into the ERC‑7785 chain identifier, we get a direct way to map an ERC‑7930 binary
-                address back to its network using the chain’s CAIP‑2 identifier, and then fetch the
-                authoritative ChainData from the registry.
-              </p>
-              <p>
-                Reference:
-                {' '}
-                <a
-                  href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  ERC-7785: CAIP-2 and CAIP-350 integration
-                </a>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </div>
   );

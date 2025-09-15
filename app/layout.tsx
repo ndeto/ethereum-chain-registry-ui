@@ -7,13 +7,16 @@ export const metadata = {
 import '@/index.css';
 import React from 'react';
 import SiteNav from '@/components/SiteNav';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>
-        <SiteNav />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <SiteNav />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

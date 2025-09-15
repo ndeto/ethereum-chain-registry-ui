@@ -7,25 +7,29 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Default: dark theme for high-contrast on black */
   :root {
     --background: 240 10% 3.9%;
     --foreground: 210 40% 98%;
 
-    --card: 240 10% 4.9%;
+    /* Neutral grey card surface for contrast */
+    --card: 220 6% 16%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 240 10% 4.9%;
+    --popover: 220 6% 16%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 263 70% 50%;
     --primary-foreground: 210 40% 98%;
     --primary-glow: 263 70% 65%;
 
-    --secondary: 240 3.7% 15.9%;
+    /* Tinted secondary/muted surfaces (less flat gray on dark) */
+    --secondary: 263 32% 22%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 263 24% 20%;
+    /* Boost contrast of secondary text on dark */
+    --muted-foreground: 210 15% 85%;
 
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 210 40% 98%;
@@ -67,20 +71,22 @@ All colors MUST be HSL.
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 220 6% 16%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 6% 16%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    /* Dark-mode tint to avoid dull gray panels */
+    --secondary: 263 30% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 263 24% 16.5%;
+    /* Boost contrast of secondary text on dark */
+    --muted-foreground: 210 15% 85%;
 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
@@ -100,6 +106,46 @@ All colors MUST be HSL.
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  /* Light theme variables for optional light mode */
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --primary: 263 70% 50%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 263 70% 65%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 222.2 9% 32%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 263 70% 50%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
 @layer base {
@@ -109,5 +155,19 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Make inline code blend with text on dark surfaces */
+  :where(code):not(pre :where(code)) {
+    background-color: transparent;
+    padding: 0;
+    border: 0;
+    color: inherit;
+  }
+
+  /* Elevate code blocks subtly without heavy gray slabs */
+  pre {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--primary) / 0.1);
   }
 }

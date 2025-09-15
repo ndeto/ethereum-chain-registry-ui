@@ -40,6 +40,7 @@ export default function ChainAssignForm() {
   const [currentMapping, setCurrentMapping] = useState<string>('');
   const [assigned, setAssigned] = useState<boolean>(false);
   const [lastAssignedLabel, setLastAssignedLabel] = useState<string>('');
+  const [showResolverInfo, setShowResolverInfo] = useState(false);
 
   const connectWallet = async () => {
     try {
@@ -224,13 +225,62 @@ export default function ChainAssignForm() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-primary rounded-full">
-            <ShieldCheck className="h-5 w-5" />
-            <span className="text-primary-foreground font-medium">Resolver Assignment</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground font-medium">Resolver Assignment</span>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">Assign Label → ID</h1>
-          <p className="text-muted-foreground text-lg">Map a human label (e.g., base) to its ERC-7785 chain ID on the resolver.</p>
+          <h1 className="text-4xl font-bold text-primary">Assign Label → ID</h1>
+          <p className="text-foreground/90 text-lg leading-relaxed">Map a human label (e.g., base) to its ERC-7785 chain ID on the resolver.</p>
         </div>
+
+        {/* ENSIP-10 Resolver explainer */}
+        <Card className="border border-primary/10 bg-background/50 shadow-none">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="flex items-center gap-2">
+                <LinkIcon className="h-5 w-5 text-primary" />
+                Resolver Overview (ENSIP‑10)
+              </CardTitle>
+              <Button
+                size="sm"
+                variant="secondary"
+                type="button"
+                onClick={() => setShowResolverInfo((v) => !v)}
+                aria-expanded={showResolverInfo}
+                aria-controls="resolver-info"
+              >
+                {showResolverInfo ? 'Hide' : 'Learn more'}
+              </Button>
+            </div>
+            <CardDescription>
+              ENSIP‑10 compliant resolver that maps human labels to ERC‑7785 chain IDs.
+            </CardDescription>
+          </CardHeader>
+          {showResolverInfo && (
+            <CardContent id="resolver-info" className="space-y-3 text-sm text-muted-foreground">
+              <p>
+                This resolver stores an assignment from a human‑friendly label (e.g., <code className="font-mono">base</code>) to the
+                ERC‑7785 chain identifier (<code className="font-mono">bytes32</code>) that was derived and registered in the Registry.
+              </p>
+              <p>
+                It implements the <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ensdomains/docs/blob/master/ens-improvement-proposals/ensip-10.md">ENSIP‑10</a>
+                {' '}pattern, so clients can call <code className="font-mono">resolve(name, data)</code> where
+                {' '}<code className="font-mono">data = encode(text(node, "chain-id"))</code>. The <code className="font-mono">node</code> is the
+                namehash of <code className="font-mono">&lt;label&gt;.cid.eth</code> and can be computed via
+                {' '}<code className="font-mono">computeNode(label)</code>.
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><code className="font-mono">assign(label, chainId)</code>: store mapping</li>
+                <li><code className="font-mono">computeNode(label)</code> → <code className="font-mono">nodeToChainId(node)</code>: direct reads</li>
+                <li><code className="font-mono">resolve(name, encode(text(node, "chain-id")))</code>: ENSIP‑10 reads</li>
+              </ul>
+              <p className="text-xs">
+                Source: {' '}
+                <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/ChainResolver.sol">ChainResolver.sol</a>
+              </p>
+            </CardContent>
+          )}
+        </Card>
 
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
@@ -257,7 +307,7 @@ export default function ChainAssignForm() {
             </div>
 
             {!isConnected ? (
-              <Button type="button" onClick={connectWallet} className="w-full bg-gradient-primary text-primary-foreground font-semibold py-3">
+              <Button type="button" onClick={connectWallet} className="w-full bg-primary text-primary-foreground font-semibold py-3">
                 <Wallet className="h-4 w-4 mr-2" />
                 Connect Wallet
               </Button>
@@ -284,14 +334,14 @@ export default function ChainAssignForm() {
                 <div className="flex gap-2">
                   <Button type="button" variant="secondary" onClick={checkCurrent} disabled={checking || !labelValue.trim()}>
                     {checking ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <LinkIcon className="h-4 w-4 mr-2" />}
-                    Check Current Mapping
+                    Check if mapping exists
                   </Button>
                   <a href={resolverHref} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm underline px-2 py-2">
                     View Resolver
                   </a>
                 </div>
 
-                <Button type="button" onClick={onAssign} disabled={!labelValue.trim() || !isBytes32(chainIdValue) || submitting} className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
+                <Button type="button" onClick={onAssign} disabled={!labelValue.trim() || !isBytes32(chainIdValue) || submitting} className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -8,7 +8,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "resolve:chain": "bun run scripts/resolve-chainid.ts"
   },
   "dependencies": {
     "next": "^14.2.15",

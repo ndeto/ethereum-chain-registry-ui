@@ -42,9 +42,6 @@ const ChainResolverForm: React.FC = () => {
       toast({ variant: 'destructive', title: 'Copy failed', description: 'Could not copy to clipboard.' });
     }
   };
-
-  // No wallet connect logic needed on Resolver page.
-
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -145,12 +142,12 @@ const ChainResolverForm: React.FC = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-primary rounded-full">
-            <Search className="h-5 w-5" />
-            <span className="text-primary-foreground font-medium">Chain Name Resolver</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
+            <Search className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground font-medium">Chain Name Resolver</span>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">Resolve Chain Name</h1>
-          <p className="text-muted-foreground text-lg">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID. The full name will be label.cid.eth. Tip: Full flow starts with Register → Assign; this page is a quick resolver.</p>
+          <h1 className="text-4xl font-bold text-primary">Resolve Chain Name</h1>
+          <p className="text-foreground/90 text-lg leading-relaxed">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID. The full name will be label.cid.eth. Tip: Full flow starts with Register → Assign; this page is a quick resolver.</p>
         </div>
 
         <Card className="border border-primary/10 bg-background/50 shadow-none">
@@ -158,6 +155,11 @@ const ChainResolverForm: React.FC = () => {
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5 text-primary" />
               Popular Chains
+              {isResolving && (
+                <span className="inline-flex items-center text-xs text-muted-foreground ml-2">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Resolving…
+                </span>
+              )}
             </CardTitle>
             <CardDescription>Quickly resolve common networks.</CardDescription>
           </CardHeader>
@@ -172,6 +174,7 @@ const ChainResolverForm: React.FC = () => {
                   key={c.text}
                   variant="secondary"
                   type="button"
+                  disabled={isResolving}
                   onClick={() => {
                     setInputName(c.value);
                     void handleResolve(c.value);
@@ -211,7 +214,7 @@ const ChainResolverForm: React.FC = () => {
               </div>
             </div>
 
-            <Button type="button" onClick={() => handleResolve()} disabled={!inputName.trim() || isResolving} className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
+            <Button type="button" onClick={() => handleResolve()} disabled={!inputName.trim() || isResolving} className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
               {isResolving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

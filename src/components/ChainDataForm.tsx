@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Hash, Copy, CheckCircle, Wallet, AlertTriangle, BookOpen, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ethers } from 'ethers';
+import { ethers, Interface } from 'ethers';
 import { CHAIN_REGISTRY_ABI } from '@/lib/abis';
 import { CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
 import { withSepoliaProvider } from '@/lib/rpc';
@@ -39,7 +39,9 @@ const ChainDataForm: React.FC = () => {
   });
   
   const [isComputing, setIsComputing] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
   const [computedHash, setComputedHash] = useState<string>('');
+  const [didSubmitTx, setDidSubmitTx] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
   const [submittedName, setSubmittedName] = useState<string>('');
   const resultRef = useRef<HTMLDivElement | null>(null);
@@ -47,6 +49,7 @@ const ChainDataForm: React.FC = () => {
   const [account, setAccount] = useState<string>('');
   const [chainIdHex, setChainIdHex] = useState<string>('');
   const [networkName, setNetworkName] = useState<string>('');
+  const [showInputsInfo, setShowInputsInfo] = useState(false);
   const { toast } = useToast();
 
   const handleInputChange = (field: keyof ChainData, value: string) => {
@@ -111,7 +114,6 @@ const ChainDataForm: React.FC = () => {
     }
   };
 
-  // Attempt to switch to Ethereum Mainnet for the registry contract
   const switchToTargetNetwork = async () => {
     try {
       const eth = (window as any)?.ethereum;
@@ -122,7 +124,6 @@ const ChainDataForm: React.FC = () => {
         params: [{ chainId: TARGET_CHAIN_ID_HEX }],
       });
 
-      // Update local state after switch
       const provider = new ethers.BrowserProvider(eth);
       const network = await provider.getNetwork();
       const currentChainIdHex = `0x${network.chainId.toString(16)}`;
@@ -134,7 +135,6 @@ const ChainDataForm: React.FC = () => {
         description: `Now on ${TARGET_NETWORK_NAME}`,
       });
     } catch (error: any) {
-      // If the chain is not added to MetaMask
       if (error?.code === 4902) {
         try {
           const eth = (window as any)?.ethereum;
@@ -145,7 +145,6 @@ const ChainDataForm: React.FC = () => {
                   chainId: TARGET_CHAIN_ID_HEX,
                   chainName: TARGET_NETWORK_NAME,
                   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                  // Use public Sepolia RPC
                   rpcUrls: TARGET_CHAIN_ID_HEX === '0xaa36a7' ? ['https://ethereum-sepolia.publicnode.com'] : [],
                   blockExplorerUrls: TARGET_CHAIN_ID_HEX === '0xaa36a7' ? ['https://sepolia.etherscan.io/'] : [],
                 },
@@ -169,12 +168,10 @@ const ChainDataForm: React.FC = () => {
     }
   };
 
-  // Initialize from already-authorized wallet, and keep in sync on changes
   useEffect(() => {
     const eth = (window as any)?.ethereum;
     if (!eth) return;
 
-    // Initial sync without prompting the user
     (async () => {
       try {
         const accounts: string[] = await eth.request?.({ method: 'eth_accounts' });
@@ -186,9 +183,7 @@ const ChainDataForm: React.FC = () => {
         const network = await provider.getNetwork();
         setNetworkName(network.name || 'unknown');
         setChainIdHex(`0x${network.chainId.toString(16)}`);
-      } catch {
-        // ignore
-      }
+      } catch {}
     })();
 
     if (!eth.on) return;
@@ -233,6 +228,7 @@ const ChainDataForm: React.FC = () => {
     }
 
     setIsComputing(true);
+    setDidSubmitTx(false);
     
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -283,15 +279,12 @@ const ChainDataForm: React.FC = () => {
         coinType: coinTypeValue
       };
 
-      // Log the exact struct payload before sending the transaction
-      // eslint-disable-next-line no-console
       console.debug('[Registry] register -> ChainData', {
         ...chainData,
         // stringify bigint for readability
         settlementChainId: chainData.settlementChainId.toString(),
       });
 
-      // Demo UI: call the unrestricted demoRegister entrypoint
       const tx = await contract.demoRegister(chainData);
 
       toast({
@@ -299,18 +292,15 @@ const ChainDataForm: React.FC = () => {
         description: "Waiting for transaction confirmation..."
       });
 
-      // Wait for receipt using a read-only provider to avoid wallet RPC rate limits
       let receipt;
       try {
         receipt = await withSepoliaProvider(async (readProvider) => {
           return readProvider.waitForTransaction(tx.hash);
         });
       } catch {
-        // Fallback to signer provider if needed
         receipt = await tx.wait();
       }
       
-      // Extract the chain ID from the transaction logs
       const chainRegisteredEvent = receipt.logs.find((log: any) => {
         try {
           const parsedLog = contract.interface.parseLog(log);
@@ -328,6 +318,7 @@ const ChainDataForm: React.FC = () => {
       
       setComputedHash(chainId);
       setSubmittedName(formData.chainName);
+      setDidSubmitTx(true);
       setFormData({
         chainName: '',
         settlementChainId: '',
@@ -366,7 +357,54 @@ const ChainDataForm: React.FC = () => {
     }
   };
 
-  // Scroll to the result section once it's rendered
+  const handleSimulate = async () => {
+    if (!isFormValid()) {
+      toast({ variant: 'destructive', title: 'Invalid Form', description: 'Please fill all fields with valid data.' });
+      return;
+    }
+    try {
+      setIsSimulating(true);
+      const address = CHAIN_REGISTRY_ADDRESS as string;
+      const isZeroAddress = typeof address === 'string' && address.toLowerCase() === '0x0000000000000000000000000000000000000000';
+      const isValidRegistry = typeof address === 'string' && /^0x[a-fA-F0-9]{40}$/.test(address) && !isZeroAddress;
+      if (!isValidRegistry) {
+        toast({ variant: 'destructive', title: 'Missing Contract Address', description: 'Set NEXT_PUBLIC_CHAIN_REGISTRY_ADDRESS.' });
+        return;
+      }
+
+      const isEip155 = formData.chainNamespace.trim().toLowerCase() === 'eip155';
+      const coinTypeValue = isEip155 && !formData.coinType.trim() ? 0 : parseInt(formData.coinType);
+
+      const chainData = {
+        chainName: formData.chainName,
+        settlementChainId: BigInt(formData.settlementChainId),
+        version: formData.version,
+        rollupContract: formData.rollupContract,
+        chainNamespace: formData.chainNamespace,
+        chainReference: formData.chainReference,
+        coinType: coinTypeValue,
+      };
+
+      const chainId: string = await withSepoliaProvider(async (provider) => {
+        const iface = new Interface(CHAIN_REGISTRY_ABI as any);
+        const data = iface.encodeFunctionData('demoRegister', [chainData]);
+        const out = await provider.call({ to: address, data });
+        const [ret] = iface.decodeFunctionResult('demoRegister', out);
+        return ret as string;
+      });
+
+      setComputedHash(chainId);
+      setSubmittedName(formData.chainName);
+      setDidSubmitTx(false);
+      toast({ title: 'Simulated', description: 'Computed chain identifier via eth_call.' });
+      try { resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Simulation Failed', description: e?.shortMessage || e?.reason || e?.message || 'Could not simulate computation.' });
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
   useEffect(() => {
     if (computedHash && resultRef.current) {
       try {
@@ -389,7 +427,6 @@ const ChainDataForm: React.FC = () => {
     { key: 'chainName' as keyof ChainData, label: 'Chain Name', type: 'text', placeholder: 'e.g., optimism' },
     { key: 'settlementChainId' as keyof ChainData, label: 'Settlement Chain ID', type: 'number', placeholder: 'e.g., 1' },
     { key: 'version' as keyof ChainData, label: 'Version', type: 'text', placeholder: 'e.g., v1' },
-    // Optimism L1 portal contract on Ethereum mainnet (placeholder)
     { key: 'rollupContract' as keyof ChainData, label: 'Rollup Contract', type: 'text', placeholder: 'e.g., 0xbEb5fc579115071764c7423A4f12eDde41f106Ed' },
     { key: 'chainNamespace' as keyof ChainData, label: 'Chain Namespace', type: 'text', placeholder: 'e.g., eip155' },
     { key: 'chainReference' as keyof ChainData, label: 'Chain Reference', type: 'text', placeholder: 'e.g., 10' },
@@ -397,22 +434,96 @@ const ChainDataForm: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <section className="space-y-6">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-primary rounded-full">
-            <Hash className="h-5 w-5" />
-            <span className="text-primary-foreground font-medium">Chain Registration</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
+            <Hash className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground font-medium">Chain Registration</span>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-primary">
             ERC-7785 Chain Registry (Demo)
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-foreground/90 text-lg leading-relaxed">
             Enter ChainData struct parameters to compute the 32-byte ERC-7785 chain identifier
           </p>
         </div>
+        {/* Inputs and Result (explanatory) */}
+        <Card className="border border-primary/10">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="flex items-center gap-2">
+                <Hash className="h-5 w-5 text-primary" />
+                Inputs and Result
+              </CardTitle>
+              <Button
+                size="sm"
+                variant="secondary"
+                type="button"
+                onClick={() => setShowInputsInfo((v) => !v)}
+                aria-expanded={showInputsInfo}
+                aria-controls="inputs-details"
+              >
+                {showInputsInfo ? 'Hide details' : 'Learn more'}
+              </Button>
+            </div>
+            <CardDescription>Fill in the form below to derive a chain identifier.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showInputsInfo && (
+              <div id="inputs-details" className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>chainName</strong>: Human chain name (e.g., Base Mainnet).</li>
+                    <li><strong>settlementChainId</strong>: EIP‑155 chain ID of the settlement layer (e.g., 1 for Ethereum).</li>
+                    <li><strong>version</strong>: Spec/format version used in derivation.</li>
+                    <li><strong>rollupContract</strong>: L2 anchor/rollup contract; <code className="font-mono">0x00…00</code> if none.</li>
+                    <li>
+                      <strong>chainNamespace</strong>: <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> namespace
+                      {' '}(e.g., <code className="font-mono">eip155</code>).
+                    </li>
+                    <li>
+                      <strong>chainReference</strong>: <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> reference
+                      {' '}(e.g., <code className="font-mono">8453</code> for Base).
+                    </li>
+                    <li>
+                      <strong>coinType</strong>: ENS coin type (<a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ensdomains/docs/blob/master/ens-improvement-proposals/ensip-11.md">ENSIP‑11</a>);
+                      {' '}derived for EVM (<code className="font-mono">eip155</code>), required otherwise.
+                    </li>
+                  </ul>
+                </div>
+                <pre className="text-xs overflow-auto p-3 rounded-md bg-secondary/50 border border-primary/10"><code>{`// Derivation (conceptual)
+bytes32 chainId = keccak256(
+  abi.encode(
+    chainName,
+    settlementChainId,
+    version,
+    rollupContract,
+    chainNamespace,
+    chainReference
+  )
+);`}</code></pre>
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>
+                    The registry interface defines <code className="font-mono">register(ChainData)</code> and exposes stored entries via
+                    <code className="font-mono"> chainData(bytes32)</code> and helpers. You can view the exposed functions here:
+                  </p>
+                  <p>
+                    <a
+                      href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/interfaces/ChainRegistry.sol"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline"
+                    >
+                      ChainRegistry.sol (GitHub)
+                    </a>
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <Card className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
+        <Card className="border border-primary/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5 text-primary" />
@@ -464,7 +575,7 @@ const ChainDataForm: React.FC = () => {
             <Button
               type="button"
               onClick={connectWallet}
-              className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3"
+              className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3"
             >
               <Wallet className="h-4 w-4 mr-2" />
               Connect Wallet
@@ -507,12 +618,33 @@ const ChainDataForm: React.FC = () => {
                     You can verify on the <a className="underline" href="/resolve">Resolve</a> and <a className="underline" href="/caip2">CAIP‑2</a> pages.
                   </div>
                 </div>
-                
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleSimulate}
+                    disabled={!isFormValid() || isSimulating}
+                  >
+                    {isSimulating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Simulating…
+                      </>
+                    ) : (
+                      <>
+                        <Hash className="h-4 w-4 mr-2" />
+                        Simulate (eth_call)
+                      </>
+                    )}
+                  </Button>
+                  <div className="text-xs text-muted-foreground self-center">Preview the identifier without a transaction.</div>
+                </div>
+
                 <Button
                   type="button"
                   onClick={handleCompute}
                   disabled={!isFormValid() || isComputing}
-                  className="w-full bg-gradient-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3"
+                  className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3"
                 >
                   {isComputing ? (
                     <>
@@ -531,42 +663,17 @@ const ChainDataForm: React.FC = () => {
           </CardContent>
         </Card>
 
-        
-
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Hash className="h-5 w-5 text-primary" />
-              Contracts
-            </CardTitle>
-            <CardDescription>Addresses used by this page (Sepolia).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm space-y-2">
-              <div className="flex items-center gap-2">
-                <strong>Registry:</strong>
-                <a
-                  href={`https://sepolia.etherscan.io/address/${CHAIN_REGISTRY_ADDRESS}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline break-all"
-                >
-                  {CHAIN_REGISTRY_ADDRESS}
-                </a>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {computedHash && (
-          <Card ref={resultRef} className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
+          <Card ref={resultRef} className="border border-primary/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-primary" />
                 Computed Hash Result
               </CardTitle>
               <CardDescription>
-                ERC-7785 Chain ID generated from the registered ChainData
+                {didSubmitTx
+                  ? 'ERC‑7785 Chain ID generated from the registered ChainData'
+                  : 'Simulated ERC‑7785 Chain ID (no transaction performed)'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -598,72 +705,38 @@ const ChainDataForm: React.FC = () => {
                   </div>
                 )}
                 <div className="pt-2">
-                  <Link
-                    href={(() => {
-                      const hasParams = Boolean(submittedName || computedHash);
-                      if (!hasParams) return '/assign';
-                      const params = new URLSearchParams();
-                      if (submittedName) params.set('label', submittedName);
-                      if (computedHash) params.set('chainId', computedHash);
-                      return `/assign?${params.toString()}`;
-                    })()}
-                    className="inline-block"
-                  >
-                    <Button variant="secondary" type="button">
-                      Go to Assign
-                    </Button>
-                  </Link>
+                  {didSubmitTx ? (
+                    <Link
+                      href={(() => {
+                        const hasParams = Boolean(submittedName || computedHash);
+                        if (!hasParams) return '/assign';
+                        const params = new URLSearchParams();
+                        if (submittedName) params.set('label', submittedName);
+                        if (computedHash) params.set('chainId', computedHash);
+                        return `/assign?${params.toString()}`;
+                      })()}
+                      className="inline-block"
+                    >
+                      <Button variant="secondary" type="button">
+                        Go to Assign
+                      </Button>
+                    </Link>
+                  ) : (
+                    <div className="space-y-2">
+                      <Button variant="secondary" type="button" disabled>
+                        Go to Assign
+                      </Button>
+                      <div className="text-xs text-muted-foreground">
+                        To assign this label, please register the ChainData on-chain first.
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
-
-        <Card className="bg-gradient-card shadow-card border border-primary/20 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              ChainData Reference
-            </CardTitle>
-            <CardDescription>
-              This form maps to the <code className="font-mono">ChainData</code> struct used by the <a
-                  href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  ERC-7785 chain registry - modified (GitHub)
-                </a>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>
-                The registry interface defines <code className="font-mono">register(ChainData)</code> and exposes
-                stored entries via <code className="font-mono">chainData(bytes32)</code> and helpers. You can view the
-                source of the struct and methods here:
-              </p>
-              <p>
-                <a
-                  href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/interfaces/IChainRegistry.sol"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  IChainRegistry.sol (GitHub)
-                </a>
-              </p>
-              <p>
-                Fields captured: <code className="font-mono">chainName</code>, <code className="font-mono">settlementChainId</code>,
-                <code className="font-mono">version</code>, <code className="font-mono">rollupContract</code>,
-                <code className="font-mono">chainNamespace</code>, <code className="font-mono">chainReference</code>,
-                <code className="font-mono">coinType</code>.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </section>
   );
 };
 

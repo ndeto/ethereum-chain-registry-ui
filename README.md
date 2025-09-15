@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 (Flow page).
+Open http://localhost:3000 (Home: Register).
 
 ## Environment
 
@@ -58,23 +58,19 @@ If you want to run this UI against your own contracts:
 That’s it — the Register/Assign/Resolve/CAIP‑2 pages will now use your contracts.
 
 
-## Pages & Flow
+## Pages
 
-### Flow — `/`
-
-Landing page with links to Register, Assign, Resolve, and CAIP‑2.
-
-### Register — `/register`
+### Home (Register) — `/` (also `/register`)
 
 Demo UI calls `registry.demoRegister(ChainData)` (unrestricted) for convenience. On production, restrict to `register` (owner‑only). Fields:
 
-- chainName: lowercase slug, e.g., `optimism`, `base`, `arbitrum`, testnets like `optimism-sepolia`
+- chainName: human chain name/slug, e.g., `optimism`, `base`, `arb1`
 - settlementChainId: L1 chain id (decimal), e.g., `1` for Ethereum mainnet
-- version: free‑form tag, e.g., `v1`
-- rollupContract: canonical L1 contract (portal/bridge)
-- chainNamespace: CAIP‑2 namespace, for EVM use `eip155`
-- chainReference: CAIP‑2 reference, for EVM use the decimal chain id string of the chain, e.g., `10`, `8453`
-- coinType: SLIP‑44 coin type; for EVM use `60` (ABI expects `uint256`)
+- version: spec/format version, e.g., `v1`
+- rollupContract: canonical L1 contract (portal/bridge) if applicable
+- chainNamespace: CAIP‑2 namespace, e.g., `eip155`
+- chainReference: CAIP‑2 reference (string), e.g., `10`, `8453`
+- coinType: ENS coin type; for `eip155` this is derived (optional), otherwise required
 
 Notes:
 - Requires wallet connection and Sepolia. Demo endpoint is open; use `register` on production.
@@ -96,8 +92,10 @@ Resolve a human label to an ERC‑7785 chainId and ChainData:
 
 - Computes node via `computeNode(label)` then `nodeToChainId(node)` on the resolver.
 - Fetches ChainData from the registry.
-- Computes CAIP‑2 identifier and hash (on‑chain hasher) from ChainData.
+- Computes CAIP‑2 identifier and hash from ChainData.
 - Shows a Contracts card with the resolver address.
+
+This resolver supports ENSIP‑10 reads. Clients can call `resolve(name, data)` with `data = encode(text(node, "chain-id"))` and `name` DNS‑encoded for `<label>.cid.eth`.
 
 Reference: [CAIP‑2 and CAIP‑350 in ERC‑7785](https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier)
 
@@ -107,6 +105,16 @@ Two lookups:
 
 - By CAIP‑2 Hash (first): calls `registry.caip2HashToChainId(hash)` then `registry.chainData(chainId)`
 - By CAIP‑2 Identifier: computes hash using the on‑chain hasher, then same as above
+
+Buttons show a loading spinner and disable while fetching.
+
+### Learn — `/learn`
+
+Reference hub for specs used by the app:
+
+- ERC‑7785 proposal, EIP‑155, CAIP‑2, ERC‑7930
+- ENSIP‑10 (resolve) and ENSIP‑11 (coin types)
+- Optimism interop docs (Superchain devnet)
 
 ## Typical Process
 

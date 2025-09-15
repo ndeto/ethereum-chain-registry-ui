@@ -6,22 +6,26 @@ export const metadata = {
 
 import '@/index.css';
 import React from 'react';
-import SiteNav from '@/components/SiteNav';
-import { ThemeProvider } from '@/components/theme-provider';
-import ContextProvider from '../context'
 import { headers } from 'next/headers'
+import ContextProvider from '../context'
+import ZincNav from '@/components/ZincNav'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from '@/components/ui/toaster'
+import { Toaster as Sonner } from '@/components/ui/sonner'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const cookies = headers().get('cookie');
 
   return (
-    <html lang="en" className="dark">
-      <body>
+    <html lang="en">
+      <body className="zinc-theme min-h-screen bg-zinc-950 text-zinc-100 antialiased">
         <ContextProvider cookies={cookies}>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <SiteNav />
-            {children}
-          </ThemeProvider>
+          <TooltipProvider>
+            <ZincNav />
+            <main className="min-h-[calc(100vh-56px)]">{children}</main>
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
         </ContextProvider>
       </body>
     </html>

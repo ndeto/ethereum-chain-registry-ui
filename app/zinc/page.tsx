@@ -18,7 +18,7 @@ export default function ZincHome() {
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
             <h2 className="text-base font-medium">Register</h2>
             <p className="mt-1 text-sm text-zinc-400">Go to the original Register flow.</p>
-            <a href="/" className="mt-3 inline-flex items-center rounded-md bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 hover:bg-zinc-200">Open Register</a>
+            <a href="/zinc/register" className="mt-3 inline-flex items-center rounded-md bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 hover:bg-zinc-200">Open Register</a>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
             <h2 className="text-base font-medium">Learn</h2>
@@ -30,4 +30,3 @@ export default function ZincHome() {
     </section>
   )
 }
-

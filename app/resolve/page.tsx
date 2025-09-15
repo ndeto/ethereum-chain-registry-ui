@@ -1,11 +1,11 @@
-import Providers from '@/providers';
 import ChainResolverForm from '@/components/ChainResolverForm';
 
 export default function ResolvePage() {
   return (
-    <Providers>
-      <ChainResolverForm />
-    </Providers>
+    <main className="px-6 py-8">
+      <div className="mx-auto max-w-3xl">
+        <ChainResolverForm />
+      </div>
+    </main>
   );
 }
-

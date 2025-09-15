@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function ZincLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+    <div className="zinc-theme min-h-screen bg-zinc-950 text-zinc-100 antialiased">
       <TooltipProvider>
         <ZincNav />
         <main className="min-h-[calc(100vh-56px)]">

@@ -1,13 +1,11 @@
-import Providers from '@/providers';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Link2, Hash } from 'lucide-react';
 
 export default function LearnPage() {
   return (
-    <Providers>
-      <main className="min-h-screen bg-background p-6">
-        <div className="mx-auto max-w-5xl grid gap-6">
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-5xl grid gap-6">
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -99,8 +97,7 @@ export default function LearnPage() {
               </ul>
             </CardContent>
           </Card>
-        </div>
-      </main>
-    </Providers>
+      </div>
+    </main>
   );
 }

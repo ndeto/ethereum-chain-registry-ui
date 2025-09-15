@@ -8,14 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Hash, Copy, CheckCircle, Wallet, AlertTriangle, BookOpen, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ethers, Interface } from 'ethers';
 import { CHAIN_REGISTRY_ABI } from '@/lib/abis';
 import { CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
-import { withSepoliaProvider } from '@/lib/rpc';
+import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi';
+import { type Abi, parseEventLogs } from 'viem';
+import { sepolia as viemSepolia } from 'viem/chains';
+import { AppKitButton } from '@reown/appkit/react';
 
 const TARGET_NETWORK_NAME = 'Sepolia';
-const TARGET_CHAIN_ID_HEX = '0xaa36a7'; // Sepolia
-const TARGET_CHAIN_ID_DECIMAL = BigInt(TARGET_CHAIN_ID_HEX);
+const TARGET_CHAIN_ID = 11155111; // Sepolia
+const TARGET_CHAIN_ID_HEX = '0xaa36a7';
 
 interface ChainData {
   chainName: string;
@@ -45,10 +47,13 @@ const ChainDataForm: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [submittedName, setSubmittedName] = useState<string>('');
   const resultRef = useRef<HTMLDivElement | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [account, setAccount] = useState<string>('');
-  const [chainIdHex, setChainIdHex] = useState<string>('');
-  const [networkName, setNetworkName] = useState<string>('');
+  const { address: account, isConnected } = useAccount();
+  const chainId = useChainId();
+  const chainIdHex = chainId ? `0x${chainId.toString(16)}` : '';
+  const networkName = chainId === TARGET_CHAIN_ID ? TARGET_NETWORK_NAME : 'unknown';
+  const publicClient = usePublicClient();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
   const [showInputsInfo, setShowInputsInfo] = useState(false);
   const { toast } = useToast();
 
@@ -74,100 +79,18 @@ const ChainDataForm: React.FC = () => {
     return allFilledExceptCoinType && isValidAddress(formData.rollupContract) && settlementOk && coinTypeOk;
   };
 
-  const connectWallet = async () => {
-    try {
-      const eth = (window as any)?.ethereum;
-      if (!eth) {
-        toast({
-          variant: "destructive",
-          title: "MetaMask Required",
-          description: "Please install MetaMask to use this application."
-        });
-        return;
-      }
-
-      await eth.request?.({ method: "eth_requestAccounts" });
-
-      const provider = new ethers.BrowserProvider(eth);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-
-      const network = await provider.getNetwork();
-      const currentChainIdHex = `0x${network.chainId.toString(16)}`;
-      setChainIdHex(currentChainIdHex);
-      setNetworkName(network.name || 'unknown');
-      
-      setAccount(address);
-      setIsConnected(true);
-      
-      toast({
-        title: "Wallet Connected",
-        description: `Connected to ${address.slice(0, 6)}...${address.slice(-4)}`
-      });
-    } catch (error) {
-      console.error("Failed to connect wallet:", error);
-      toast({
-        variant: "destructive",
-        title: "Connection Failed",
-        description: "Failed to connect to wallet. Please try again."
-      });
-    }
-  };
+  // Connection handled via Reown AppKit Button in the header or below when needed.
 
   const switchToTargetNetwork = async () => {
     try {
-      const eth = (window as any)?.ethereum;
-      if (!eth?.request) return;
-
-      await eth.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: TARGET_CHAIN_ID_HEX }],
-      });
-
-      const provider = new ethers.BrowserProvider(eth);
-      const network = await provider.getNetwork();
-      const currentChainIdHex = `0x${network.chainId.toString(16)}`;
-      setChainIdHex(currentChainIdHex);
-      setNetworkName(network.name || 'unknown');
-
-      toast({
-        title: 'Switched Network',
-        description: `Now on ${TARGET_NETWORK_NAME}`,
-      });
-    } catch (error: any) {
-      if (error?.code === 4902) {
-        try {
-          const eth = (window as any)?.ethereum;
-          await eth.request({
-            method: 'wallet_addEthereumChain',
-              params: [
-                {
-                  chainId: TARGET_CHAIN_ID_HEX,
-                  chainName: TARGET_NETWORK_NAME,
-                  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: TARGET_CHAIN_ID_HEX === '0xaa36a7' ? ['https://ethereum-sepolia.publicnode.com'] : [],
-                  blockExplorerUrls: TARGET_CHAIN_ID_HEX === '0xaa36a7' ? ['https://sepolia.etherscan.io/'] : [],
-                },
-              ],
-          });
-          toast({ title: `${TARGET_NETWORK_NAME} Added`, description: 'Try switching again.' });
-        } catch (addErr) {
-          toast({
-            variant: 'destructive',
-            title: 'Switch Failed',
-            description: `Could not add/switch to ${TARGET_NETWORK_NAME}.`,
-          });
-        }
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Switch Failed',
-          description: 'User rejected or wallet error.',
-        });
-      }
+      await switchChain({ chainId: TARGET_CHAIN_ID });
+      toast({ title: 'Switched Network', description: `Now on ${TARGET_NETWORK_NAME}.` });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Switch Failed', description: err?.shortMessage || err?.message || 'Wallet error.' });
     }
   };
 
+  /* wagmi manages chain/account updates
   useEffect(() => {
     const eth = (window as any)?.ethereum;
     if (!eth) return;
@@ -207,6 +130,7 @@ const ChainDataForm: React.FC = () => {
       eth.removeListener?.('accountsChanged', handleAccountsChanged);
     };
   }, []);
+  */
 
   const handleCompute = async () => {
     if (!isFormValid()) {
@@ -231,10 +155,7 @@ const ChainDataForm: React.FC = () => {
     setDidSubmitTx(false);
     
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      const address = CHAIN_REGISTRY_ADDRESS ?? (undefined as unknown as string);
+      const address = CHAIN_REGISTRY_ADDRESS as `0x${string}`;
       const isZeroAddress = typeof address === 'string' && address.toLowerCase() === '0x0000000000000000000000000000000000000000';
       const isValidRegistry = typeof address === 'string' && /^0x[a-fA-F0-9]{40}$/.test(address) && !isZeroAddress;
       if (!isValidRegistry) {
@@ -245,18 +166,9 @@ const ChainDataForm: React.FC = () => {
         });
         return;
       }
-
-      console.log("Registry Address", address);
-
-      const contract = new ethers.Contract(
-        address,
-        CHAIN_REGISTRY_ABI,
-        signer
-      );
-
-      // Ensure we are on the configured target network for the registry contract
-      const network = await provider.getNetwork();
-      if (network.chainId !== TARGET_CHAIN_ID_DECIMAL) {
+      
+      // Ensure correct network
+      if (chainId !== TARGET_CHAIN_ID) {
         toast({
           variant: 'destructive',
           title: 'Wrong Network',
@@ -277,7 +189,7 @@ const ChainDataForm: React.FC = () => {
         chainNamespace: formData.chainNamespace,
         chainReference: formData.chainReference,
         coinType: coinTypeValue
-      };
+      } as const;
 
       console.debug('[Registry] register -> ChainData', {
         ...chainData,
@@ -285,38 +197,29 @@ const ChainDataForm: React.FC = () => {
         settlementChainId: chainData.settlementChainId.toString(),
       });
 
-      const tx = await contract.demoRegister(chainData);
-
-      toast({
-        title: "Transaction Submitted",
-        description: "Waiting for transaction confirmation..."
+      const txHash = await writeContractAsync({
+        address,
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        functionName: 'demoRegister',
+        args: [chainData],
+        chain: viemSepolia,
+        account: account as `0x${string}`
       });
 
-      let receipt;
-      try {
-        receipt = await withSepoliaProvider(async (readProvider) => {
-          return readProvider.waitForTransaction(tx.hash);
-        });
-      } catch {
-        receipt = await tx.wait();
-      }
-      
-      const chainRegisteredEvent = receipt.logs.find((log: any) => {
-        try {
-          const parsedLog = contract.interface.parseLog(log);
-          return parsedLog?.name === 'ChainRegistered';
-        } catch {
-          return false;
-        }
-      });
+      toast({ title: "Transaction Submitted", description: "Waiting for transaction confirmation..." });
 
-      let chainId = '';
-      if (chainRegisteredEvent) {
-        const parsedLog = contract.interface.parseLog(chainRegisteredEvent);
-        chainId = parsedLog?.args[0]; // The chainId from the event
-      }
-      
-      setComputedHash(chainId);
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
+
+      const events = parseEventLogs({
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        logs: receipt.logs,
+        eventName: 'ChainRegistered'
+      }) as any[];
+
+      let chainIdOut = '' as string;
+      chainIdOut = (events?.[0]?.args?.chainId || '') as string;
+
+      setComputedHash(chainIdOut);
       setSubmittedName(formData.chainName);
       setDidSubmitTx(true);
       setFormData({
@@ -364,7 +267,7 @@ const ChainDataForm: React.FC = () => {
     }
     try {
       setIsSimulating(true);
-      const address = CHAIN_REGISTRY_ADDRESS as string;
+      const address = CHAIN_REGISTRY_ADDRESS as `0x${string}`;
       const isZeroAddress = typeof address === 'string' && address.toLowerCase() === '0x0000000000000000000000000000000000000000';
       const isValidRegistry = typeof address === 'string' && /^0x[a-fA-F0-9]{40}$/.test(address) && !isZeroAddress;
       if (!isValidRegistry) {
@@ -385,13 +288,14 @@ const ChainDataForm: React.FC = () => {
         coinType: coinTypeValue,
       };
 
-      const chainId: string = await withSepoliaProvider(async (provider) => {
-        const iface = new Interface(CHAIN_REGISTRY_ABI as any);
-        const data = iface.encodeFunctionData('demoRegister', [chainData]);
-        const out = await provider.call({ to: address, data });
-        const [ret] = iface.decodeFunctionResult('demoRegister', out);
-        return ret as string;
+      const sim = await publicClient!.simulateContract({
+        address,
+        abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+        functionName: 'demoRegister',
+        args: [chainData],
+        account: account as `0x${string}` | undefined
       });
+      const chainId: string = sim.result as string;
 
       setComputedHash(chainId);
       setSubmittedName(formData.chainName);
@@ -572,14 +476,9 @@ bytes32 chainId = keccak256(
             </div>
             
             {!isConnected ? (
-            <Button
-              type="button"
-              onClick={connectWallet}
-              className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3"
-            >
-              <Wallet className="h-4 w-4 mr-2" />
-              Connect Wallet
-            </Button>
+              <div className="w-full flex justify-center">
+                <AppKitButton />
+              </div>
             ) : (
               <>
                 <div className="flex flex-col gap-2 p-3 bg-secondary/50 rounded-lg border border-primary/10">

@@ -1,11 +1,11 @@
-import Providers from '@/providers';
 import ChainAssignForm from '@/components/ChainAssignForm';
 
 export default function AssignPage() {
   return (
-    <Providers>
-      <ChainAssignForm />
-    </Providers>
+    <main className="px-6 py-8">
+      <div className="mx-auto max-w-3xl">
+        <ChainAssignForm />
+      </div>
+    </main>
   );
 }
-

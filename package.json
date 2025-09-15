@@ -13,6 +13,11 @@
   },
   "dependencies": {
     "next": "^14.2.15",
+    "@reown/appkit": "^1.8.5",
+    "@reown/appkit-adapter-wagmi": "^1.8.5",
+    "wagmi": "^2.16.9",
+    "@wagmi/core": "^2.20.3",
+    "viem": "^2.37.6",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -80,6 +85,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.38.0"
+    "typescript-eslint": "^8.38.0",
+    "pino-pretty": "^13.1.1"
   }
 }

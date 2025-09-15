@@ -14,6 +14,7 @@ import ModeToggle from '@/components/mode-toggle';
 
 export default function SiteNav() {
   const pathname = usePathname();
+  if (pathname?.startsWith('/zinc')) return null;
   const isActive = (href: string) => pathname === href;
   return (
     <header className="w-full border-b border-primary/10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">

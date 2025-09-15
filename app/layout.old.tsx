@@ -8,22 +8,17 @@ import '@/index.css';
 import React from 'react';
 import SiteNav from '@/components/SiteNav';
 import { ThemeProvider } from '@/components/theme-provider';
-import ContextProvider from '../context'
-import { headers } from 'next/headers'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookies = headers().get('cookie');
-
   return (
     <html lang="en" className="dark">
       <body>
-        <ContextProvider cookies={cookies}>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <SiteNav />
-            {children}
-          </ThemeProvider>
-        </ContextProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <SiteNav />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+

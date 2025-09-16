@@ -37,6 +37,16 @@ export default function ZincNav() {
           <ZincConnectButton />
         </div>
       </div>
+      {/* Mobile nav row */}
+      <div className="mx-auto max-w-6xl md:hidden px-4 py-2 border-t border-zinc-800">
+        <nav className="flex items-center gap-4 text-sm text-zinc-300 overflow-x-auto whitespace-nowrap">
+          <Link href="/" className="hover:text-zinc-100">Register</Link>
+          <Link href="/assign" className="hover:text-zinc-100">Assign</Link>
+          <Link href="/resolve" className="hover:text-zinc-100">Resolve</Link>
+          <Link href="/caip2" className="hover:text-zinc-100">CAIP‑2</Link>
+          <Link href="/learn" className="hover:text-zinc-100">Learn</Link>
+        </nav>
+      </div>
     </header>
   );
 }

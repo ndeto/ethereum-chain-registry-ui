@@ -7,18 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi';
+import { useAccount, useChainId, usePublicClient, useWriteContract } from 'wagmi';
 import { type Abi } from 'viem';
 import { sepolia as viemSepolia } from 'viem/chains';
 import ZincConnectButton from '@/components/ZincConnectButton';
-import { AlertTriangle, CheckCircle, Link as LinkIcon, Loader2, ShieldCheck, Wallet } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Link as LinkIcon, Loader2, ShieldCheck } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { CHAIN_RESOLVER_ABI } from '@/lib/abis';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { withSepoliaProvider } from '@/lib/rpc';
 
 const TARGET_NETWORK_NAME = 'Sepolia';
 const TARGET_CHAIN_ID = 11155111; // Sepolia
-const TARGET_CHAIN_ID_HEX = '0xaa36a7';
+// hex not needed on this page; use numeric for checks only
 
 const isBytes32 = (value: string) => /^0x[a-f0-9]{64}$/.test((value || '').toLowerCase());
 
@@ -32,10 +33,7 @@ export default function ChainAssignForm() {
   const { toast } = useToast();
   const { address: account, isConnected } = useAccount();
   const chainId = useChainId();
-  const chainIdHex = chainId ? `0x${chainId.toString(16)}` : '';
-  const networkName = chainId === TARGET_CHAIN_ID ? TARGET_NETWORK_NAME : 'unknown';
   const publicClient = usePublicClient();
-  const { switchChain } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
 
   const [labelValue, setLabelValue] = useState('');
@@ -48,14 +46,7 @@ export default function ChainAssignForm() {
   const [lastAssignedLabel, setLastAssignedLabel] = useState<string>('');
   const [showResolverInfo, setShowResolverInfo] = useState(false);
 
-  const switchToTarget = async () => {
-    try {
-      await switchChain({ chainId: TARGET_CHAIN_ID });
-      toast({ title: 'Switched Network', description: `Now on ${TARGET_NETWORK_NAME}` });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Switch Failed', description: error?.shortMessage || error?.message || 'Wallet error.' });
-    }
-  };
+  // Network switching is available from the site nav; suppress inline panel here
 
   useEffect(() => {
     // Prefill from query params if present (no Next hook dependency)
@@ -65,7 +56,7 @@ export default function ChainAssignForm() {
       const qChainId = params.get('chainId');
       if (qLabel && !labelValue) setLabelValue(qLabel.trim().toLowerCase());
       if (qChainId && !chainIdValue) setChainIdValue(normalizeBytes32(qChainId));
-    } catch {}
+    } catch { }
   }, []);
 
   const checkCurrent = async () => {
@@ -81,6 +72,8 @@ export default function ChainAssignForm() {
       return;
     }
     try {
+      // Clear current mapping and show skeleton while loading
+      setCurrentMapping('');
       setChecking(true);
       const node: string = await (publicClient as any)!.readContract({
         address: address as `0x${string}`,
@@ -152,7 +145,7 @@ export default function ChainAssignForm() {
           args: [node]
         }) as string;
         setCurrentMapping(mapped);
-      } catch {}
+      } catch { }
     } catch (error: any) {
       let description = error?.shortMessage || error?.reason || error?.message || 'Failed to assign label.';
       if (error?.code === 'ACTION_REJECTED') description = 'Transaction was rejected by user.';
@@ -169,10 +162,6 @@ export default function ChainAssignForm() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span className="text-xs text-muted-foreground font-medium">Resolver Assignment</span>
-          </div>
           <h1 className="text-4xl font-bold text-primary">Assign Label → ID</h1>
           <p className="text-foreground/90 text-md leading-relaxed">Map a human label (e.g., base) to its ERC-7785 chain ID on the resolver.</p>
         </div>
@@ -180,10 +169,9 @@ export default function ChainAssignForm() {
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LinkIcon className="h-5 w-5 text-primary" />
               Assignment Input
             </CardTitle>
-            <CardDescription>Calls <code className="font-mono">assign(label, chainId)</code> on the resolver.</CardDescription>
+            <CardDescription>Assigns <code className="font-mono">label -&gt; chainId</code> on the resolver.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
@@ -194,7 +182,7 @@ export default function ChainAssignForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="chainId">Chain ID (bytes32)</Label>
-                <Input id="chainId" placeholder="0x… (64 hex chars)" value={chainIdValue} onChange={(e) => setChainIdValue(normalizeBytes32(e.target.value))} />
+                <Input id="chainId" placeholder="0x…" value={chainIdValue} onChange={(e) => setChainIdValue(normalizeBytes32(e.target.value))} />
                 {!chainIdValue || isBytes32(chainIdValue) ? null : (
                   <div className="text-xs text-destructive">Must be a 32-byte hex string (0x + 64 hex)</div>
                 )}
@@ -207,20 +195,9 @@ export default function ChainAssignForm() {
               </div>
             ) : (
               <>
-                <div className="flex flex-col gap-2 p-3 bg-secondary/50 rounded-lg border border-primary/10">
-                  <div className="text-sm text-muted-foreground">Connected: {account.slice(0, 6)}...{account.slice(-4)}</div>
-                  <div className="text-xs text-muted-foreground">Network: {networkName || 'unknown'} ({chainIdHex || 'n/a'})</div>
-                  {chainIdHex?.toLowerCase() !== TARGET_CHAIN_ID_HEX && (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-xs text-amber-700 dark:text-amber-400">Resolver is deployed on {TARGET_NETWORK_NAME}.</div>
-                      <Button size="sm" variant="secondary" type="button" onClick={switchToTarget}>Switch to {TARGET_NETWORK_NAME}</Button>
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                  <div className="text-sm text-amber-700 dark:text-amber-400">
+                  <div className="text-xs text-amber-700 dark:text-amber-400">
                     Demo mode uses <code className="font-mono">demoAssign</code> (unrestricted). Avoid on production deployments.
                   </div>
                 </div>
@@ -230,11 +207,7 @@ export default function ChainAssignForm() {
                     {checking ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <LinkIcon className="h-4 w-4 mr-2" />}
                     Check if mapping exists
                   </Button>
-                  <a href={resolverHref} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm underline px-2 py-2">
-                    View Resolver
-                  </a>
                 </div>
-
                 <Button type="button" onClick={onAssign} disabled={!labelValue.trim() || !isBytes32(chainIdValue) || submitting} className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
                   {submitting ? (
                     <>
@@ -253,27 +226,28 @@ export default function ChainAssignForm() {
           </CardContent>
         </Card>
 
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">Contracts</CardTitle>
-            <CardDescription>Addresses used by this page (Sepolia).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm space-y-2">
-              <div className="flex items-center gap-2">
-                <strong>Resolver:</strong>
-                <a
-                  href={`https://sepolia.etherscan.io/address/${CHAIN_RESOLVER_ADDRESS}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline break-all"
-                >
-                  {CHAIN_RESOLVER_ADDRESS}
-                </a>
+        {/* Contracts moved to Learn page: Deployments */}
+
+        {checking && !currentMapping && (
+          <Card className="border border-primary/10 bg-background/50 shadow-none">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-5 w-40" />
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className="h-4 w-64" />
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {currentMapping && (
           <Card className="border border-primary/10 bg-background/50 shadow-none">
@@ -282,7 +256,6 @@ export default function ChainAssignForm() {
                 <CheckCircle className="h-5 w-5 text-primary" />
                 Current Mapping
               </CardTitle>
-              <CardDescription>Resolved via computeNode(label) → nodeToChainId(node)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -299,8 +272,9 @@ export default function ChainAssignForm() {
               )}
             </CardContent>
           </Card>
-        )}
-      </div>
-    </div>
+        )
+        }
+      </div >
+    </div >
   );
 }

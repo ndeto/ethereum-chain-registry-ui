@@ -22,8 +22,8 @@ This UI works against any ERC‑7785 Registry + Resolver you deploy. The app rea
 
 Quick setup:
 
-1) Copy the template: `cp .env.example .env.local`
-2) Edit `.env.local` to point at your contracts (or keep the provided Sepolia defaults)
+1. Copy the template: `cp .env.example .env.local`
+2. Edit `.env.local` to point at your contracts (or keep the provided Sepolia defaults)
 
 Required vars (client‑visible):
 
@@ -42,6 +42,7 @@ NEXT_PUBLIC_SEPOLIA_RPC_URLS=https://ethereum-sepolia.publicnode.com,https://rpc
 ```
 
 Notes:
+
 - These vars are client‑visible; do not put secrets here.
 - The app throws at startup if any required address is unset.
 - You can deploy your own contracts with the scripts here, then set the env vars above:
@@ -56,7 +57,6 @@ If you want to run this UI against your own contracts:
 - Restart the dev server to pick up the new env
 
 That’s it — the Register/Assign/Resolve/CAIP‑2 pages will now use your contracts.
-
 
 ## Pages
 
@@ -73,6 +73,7 @@ Demo UI calls `registry.demoRegister(ChainData)` (unrestricted) for convenience.
 - coinType: ENS coin type; for `eip155` this is derived (optional), otherwise required
 
 Notes:
+
 - Requires wallet connection and Sepolia. Demo endpoint is open; use `register` on production.
 - After confirmation, the page shows the emitted chainId (bytes32).
 
@@ -97,7 +98,7 @@ Resolve a human label to an ERC‑7785 chainId and ChainData:
 
 This resolver supports ENSIP‑10 reads. Clients can call `resolve(name, data)` with `data = encode(text(node, "chain-id"))` and `name` DNS‑encoded for `<label>.cid.eth`.
 
-Reference: [CAIP‑2 and CAIP‑350 in ERC‑7785](https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier)
+Reference: [CAIP‑2 and CAIP‑350 in ERC‑7785](https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier)
 
 ### CAIP‑2 — `/caip2`
 
@@ -118,10 +119,10 @@ Reference hub for specs used by the app:
 
 ## Typical Process
 
-1) Register ChainData on the registry (owner)
-2) Copy the emitted chainId (bytes32). Displayed on the UI
-3) Assign `<label>` to that chainId in the resolver (owner)
-4) Resolve `<label>.cid.eth` to verify mapping, and view ChainData + CAIP‑2
+1. Register ChainData on the registry (owner)
+2. Copy the emitted chainId (bytes32). Displayed on the UI
+3. Assign `<label>` to that chainId in the resolver (owner)
+4. Resolve `<label>.cid.eth` to verify mapping, and view ChainData + CAIP‑2
 
 ## Scripts
 

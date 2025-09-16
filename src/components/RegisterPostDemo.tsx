@@ -3,43 +3,16 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Code2, Link2 } from 'lucide-react';
-import { CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
+import { Link2 } from 'lucide-react';
 
 export default function RegisterPostDemo() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Card className="border border-primary/10 bg-background/50 shadow-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Code2 className="h-5 w-5 text-primary" />
-            Registry: Deployment & Spec
-          </CardTitle>
-          <CardDescription>Deployment link for the Registry, source code, and the ERC‑7785 spec.</CardDescription>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <div className="flex items-center gap-2">
-            <strong>Deployment:</strong>
-            <a
-              href={`https://sepolia.etherscan.io/address/${CHAIN_REGISTRY_ADDRESS}`}
-              target="_blank"
-              rel="noreferrer"
-              className="underline break-all"
-            >
-              {CHAIN_REGISTRY_ADDRESS}
-            </a>
-          </div>
-          <div>
-            Spec: {' '}
-            <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md">ERC‑7785</a>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Deployment moved to Learn page: Deployments */}
 
       <Card className="border border-primary/10 bg-background/50 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Link2 className="h-5 w-5 text-primary" />
             Assign & Resolve
           </CardTitle>
           <CardDescription>After registering, map a label and resolve it.</CardDescription>

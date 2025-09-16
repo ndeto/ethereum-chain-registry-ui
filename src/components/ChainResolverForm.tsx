@@ -5,14 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import { type Abi } from 'viem';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { fetchChainDataById } from '@/lib/registry';
 import { buildCaip2Identifier, computeCaip2HashOnChain } from '@/lib/caip2';
-import { Loader2, Search, AlertTriangle, CheckCircle, Copy } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 const RESOLVER = CHAIN_RESOLVER_ADDRESS as string;
 
 // ChainResolver ABI subset per provided contract
@@ -34,18 +33,8 @@ const ChainResolverForm: React.FC = () => {
   const [caip2Hash, setCaip2Hash] = useState<string>('');
   const [chainDataExists, setChainDataExists] = useState<boolean | null>(null);
   const [showInlineLoading, setShowInlineLoading] = useState<boolean>(false);
-  const SHOW_LEGACY_SECTIONS = false;
 
-  const copy = async (value: string, label: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      console.debug('[Resolver] copied', label, value);
-      toast({ title: 'Copied', description: `${label} copied to clipboard.` });
-    } catch (e) {
-      console.error('[Resolver] copy failed', e);
-      toast({ variant: 'destructive', title: 'Copy failed', description: 'Could not copy to clipboard.' });
-    }
-  };
+  // Removed legacy copy helpers and sections for a leaner UI
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -57,7 +46,7 @@ const ChainResolverForm: React.FC = () => {
           void handleResolve(qLabel);
         }
       }
-    } catch {}
+    } catch { }
   }, []);
 
   const handleResolve = async (label?: string) => {
@@ -113,7 +102,7 @@ const ChainResolverForm: React.FC = () => {
         params.set('auto', '1');
         params.set('chainId', chainId);
         window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
-      } catch {}
+      } catch { }
 
       // Fetch chain data from Sepolia registry
       try {
@@ -168,60 +157,18 @@ const ChainResolverForm: React.FC = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
-            <Search className="h-4 w-4 text-primary" />
-            <span className="text-xs text-muted-foreground font-medium">Chain Name Resolver</span>
-          </div>
           <h1 className="text-4xl font-bold text-primary">Resolve Chain Name</h1>
           <p className="text-foreground/90 text-md leading-relaxed">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID.</p>
         </div>
 
-        {SHOW_LEGACY_SECTIONS && (
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" />
-              Popular Chains
-              {isResolving && (
-                <span className="inline-flex items-center text-xs text-muted-foreground ml-2">
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Resolving…
-                </span>
-              )}
-            </CardTitle>
-            <CardDescription>Quickly resolve common networks.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { text: 'optimism', value: 'optimism' },
-                { text: 'arbitrum one', value: 'arb1' },
-                { text: 'base', value: 'base' },
-              ].map((c) => (
-                <Button
-                  key={c.text}
-                  variant="secondary"
-                  type="button"
-                  disabled={isResolving}
-                  onClick={() => {
-                    setInputName(c.value);
-                    void handleResolve(c.value);
-                  }}
-                >
-                  {c.text}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        )}
+        {/* Legacy quick-picks removed */}
 
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" />
               Resolver Input
             </CardTitle>
-            <CardDescription>Lookup chain ID by label via computeNode + nodeToChainId.</CardDescription>
+            <CardDescription>Lookup chain ID by label</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
@@ -295,7 +242,7 @@ const ChainResolverForm: React.FC = () => {
                           try {
                             navigator.clipboard.writeText(window.location.href);
                             toast({ title: 'Link copied', description: 'URL copied to clipboard.' });
-                          } catch {}
+                          } catch { }
                         }}
                       >
                         Copy Link
@@ -307,151 +254,9 @@ const ChainResolverForm: React.FC = () => {
             )}
           </CardContent>
         </Card>
-
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">Contracts</CardTitle>
-            <CardDescription>Addresses used by this page (Sepolia).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm space-y-2">
-              <div className="flex items-center gap-2">
-                <strong>Resolver:</strong>
-                <a
-                  href={`https://sepolia.etherscan.io/address/${CHAIN_RESOLVER_ADDRESS}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline break-all"
-                >
-                  {CHAIN_RESOLVER_ADDRESS}
-                </a>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-{SHOW_LEGACY_SECTIONS && resolvedChainId && (
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Human Name → ERC-7785 Identifier
-              </CardTitle>
-              <CardDescription>Resolves human-friendly names to an ERC‑7785 chain identifier.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
-                  <span className="opacity-70">→</span>
-                  <code className="font-mono break-all">{resolvedChainId}</code>
-                </div>
-                <Badge variant="secondary" className="">Hash Length: 66 characters (0x + 64 hex)</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-{SHOW_LEGACY_SECTIONS && nodeHash && (
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                Namehash Result
-              </CardTitle>
-              <CardDescription>ENS-encoded node for <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code></CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Badge variant="secondary" className="mb-2">Hash Length: 66 characters (0x + 64 hex)</Badge>
-                <div className="flex items-center gap-2 p-4 bg-secondary/50 rounded-lg border border-primary/10">
-                  <code className="flex-1 text-sm font-mono break-all text-foreground">{nodeHash}</code>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-{SHOW_LEGACY_SECTIONS && resolvedChainId && (
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                Chain Data (from Registry)
-              </CardTitle>
-              <CardDescription>Fetched from Sepolia registry.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!chainDataExists && chainDataExists !== null ? (
-                <div className="text-sm text-muted-foreground">No chain data found for this chainId in the registry.</div>
-              ) : resolvedChainData ? (
-                <div className="text-sm space-y-1">
-                  <div><strong>Name:</strong> {resolvedChainData.chainName}</div>
-                  <div><strong>Settlement Chain ID:</strong> {resolvedChainData.settlementChainId?.toString?.() ?? String(resolvedChainData.settlementChainId)}</div>
-                  <div><strong>Version:</strong> {resolvedChainData.version}</div>
-                  <div><strong>Rollup Contract:</strong> {resolvedChainData.rollupContract}</div>
-                  <div><strong>Namespace:</strong> {resolvedChainData.chainNamespace}</div>
-                  <div><strong>Reference:</strong> {resolvedChainData.chainReference}</div>
-                  <div><strong>Coin Type:</strong> {String(resolvedChainData.coinType)}</div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">Loading chain data…</div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-{SHOW_LEGACY_SECTIONS && caip2Identifier && caip2Hash && (
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                CAIP-2 Attributes
-              </CardTitle>
-              <CardDescription>
-                Derived from the resolved ChainData. See the reference:
-                {' '}
-                <a
-                  href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  CAIP-2 and CAIP-350 integration in ERC-7785
-                </a>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm space-y-2">
-                <div className="flex items-center gap-2">
-                  <strong>Identifier:</strong>
-                  <code className="font-mono break-all flex-1">{caip2Identifier}</code>
-                  <button
-                    type="button"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-secondary/60"
-                    onClick={() => copy(caip2Identifier, 'CAIP-2 identifier')}
-                    aria-label="Copy CAIP-2 identifier"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <strong>Hash:</strong>
-                  <code className="font-mono break-all flex-1">{caip2Hash}</code>
-                  <button
-                    type="button"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-secondary/60"
-                    onClick={() => copy(caip2Hash, 'CAIP-2 hash')}
-                    aria-label="Copy CAIP-2 hash"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+        {/* Legacy result sections removed */}
+      </div >
+    </div >
   );
 };
 

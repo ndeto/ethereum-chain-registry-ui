@@ -1,17 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Link2, Hash, ArrowRight, Database, ShieldCheck } from 'lucide-react'
+import { BookOpen, Link2, Hash, ArrowRight, Database, ShieldCheck, Link2Icon } from 'lucide-react'
+import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS, CAIP2_CONTRACT_ADDRESS } from '@/lib/addresses'
 import ChainDataForm from '@/components/ChainDataForm'
 
 export default function LearnPage() {
   return (
-    <main className="min-h-screen bg-background p-6">
+    <main className="bg-background p-6">
       <div className="mx-auto max-w-5xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
-            <Hash className="h-4 w-4 text-primary" />
-            <span className="text-xs text-muted-foreground font-medium">Learn & References</span>
-          </div>
           <h1 className="text-4xl font-bold text-primary">
             ERC‑7785: Reference Hub
           </h1>
@@ -27,7 +24,7 @@ export default function LearnPage() {
             Overview of the chain registration system
           </h2>
           <p className="text-sm text-muted-foreground">
-            <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md">ERC‑7785</a>
+            <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md">ERC‑7785</a>
             {' '}defines a deterministic 32‑byte chain identifier derived from a chain’s name and supporting attributes.
           </p>
           <p className="text-sm text-muted-foreground">
@@ -48,7 +45,7 @@ export default function LearnPage() {
             </div>
             <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
               <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck className="h-4 w-4 text-primary" />
+                <Link2Icon className="h-4 w-4 text-primary" />
                 <strong>Resolver (ChainResolver)</strong>
               </div>
               <div className="text-sm text-muted-foreground">
@@ -79,7 +76,7 @@ export default function LearnPage() {
                 Provide <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/interfaces/IChainRegistry.sol#L4">ChainData</a> (name, settlement chain ID, version, rollup contract, CAIP‑2 namespace/reference, coin type).
               </li>
               <li>
-                Send a transaction to <code className="font-mono">register(ChainData)</code>; or use <code className="font-mono">demoRegister</code> to simulate.
+                Send a transaction to <code className="font-mono">register(ChainData)</code>; on the Registry or use <code className="font-mono">demoRegister</code> to simulate.
               </li>
               <li>
                 The Registry derives <code className="font-mono">bytes32 chainId</code> via <code className="font-mono">keccak256(abi.encode(...fields))</code>. Read via <code className="font-mono">chainData(chainId)</code>.
@@ -95,13 +92,11 @@ export default function LearnPage() {
         </section>
 
         {/* CAIP-2 Context & Mapping */}
-        <Card className="border border-primary/10 bg-background/50 shadow-none">
+        <Card id="caip2-context" className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
               CAIP‑2 Context & Mapping
             </CardTitle>
-            <CardDescription>How CAIP‑2 ties human names, identifiers, and registry data together.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground space-y-2">
@@ -119,7 +114,7 @@ export default function LearnPage() {
               </p>
               <p>
                 Reference: <a
-                  href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
+                  href="https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
                   target="_blank"
                   rel="noreferrer"
                   className="underline"
@@ -131,11 +126,55 @@ export default function LearnPage() {
           </CardContent>
         </Card>
 
+        {/* Deployments (single source of truth) */}
+        <Card className="border border-primary/10 bg-background/50 shadow-none">
+          <CardHeader>
+            <CardTitle>Deployments (Sepolia)</CardTitle>
+            <CardDescription>Canonical deployment addresses used across this app.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm space-y-2">
+              <div className="flex items-center gap-2">
+                <strong>Registry:</strong>
+                <a
+                  href={`https://sepolia.etherscan.io/address/${CHAIN_REGISTRY_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline break-all"
+                >
+                  {CHAIN_REGISTRY_ADDRESS}
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <strong>Resolver:</strong>
+                <a
+                  href={`https://sepolia.etherscan.io/address/${CHAIN_RESOLVER_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline break-all"
+                >
+                  {CHAIN_RESOLVER_ADDRESS}
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <strong>CAIP‑2 Lib:</strong>
+                <a
+                  href={`https://sepolia.etherscan.io/address/${CAIP2_CONTRACT_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline break-all"
+                >
+                  {CAIP2_CONTRACT_ADDRESS}
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Core specs */}
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Hash className="h-5 w-5 text-primary" />
               Core Specs & Proposals
             </CardTitle>
             <CardDescription>Standards that underpin the registry, resolver, and identifiers.</CardDescription>
@@ -143,7 +182,10 @@ export default function LearnPage() {
           <CardContent>
             <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
               <li>
-                ERC‑7785 Proposal — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/61e0dac92e644b4be246b81b3097565a1ba3bc6c/ERCS/erc-7785.md">Spec</a>
+                ERC‑7785 Proposal — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ethereum/ERCs/blob/master/ERCS/erc-7785.md">Spec</a>
+              </li>
+              <li>
+                Modified ERC‑7785 Proposal. This registry is based on this <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md">Spec</a> — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/pull/1">Pull Request</a>
               </li>
               <li>
                 EIP‑155 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-155">Settlement chain IDs</a>
@@ -162,7 +204,6 @@ export default function LearnPage() {
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Link2 className="h-5 w-5 text-primary" />
               ENS Resolvers
             </CardTitle>
             <CardDescription>Standards and patterns used for reads via ENS.</CardDescription>
@@ -183,7 +224,6 @@ export default function LearnPage() {
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
               Interop & OP Stack
             </CardTitle>
             <CardDescription>Optimism interop explainer.</CardDescription>

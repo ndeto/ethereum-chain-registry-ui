@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Copy, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CHAIN_REGISTRY_ABI, CAIP2_LIB_ABI } from '@/lib/abis';
 import { CHAIN_REGISTRY_ADDRESS, CAIP2_CONTRACT_ADDRESS } from '@/lib/addresses';
 import { fetchChainDataById } from '@/lib/registry';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Caip2Lookup() {
   const { toast } = useToast();
@@ -23,11 +25,14 @@ export default function Caip2Lookup() {
   const [byHashData, setByHashData] = useState<any>(null);
   const [byHashExists, setByHashExists] = useState<boolean | null>(null);
   const [byHashChainId, setByHashChainId] = useState<string>('');
-  const [showContext, setShowContext] = useState(false);
+  // Context now lives on the Learn page
   const [loadingHash, setLoadingHash] = useState(false);
   const [loadingId, setLoadingId] = useState(false);
 
   const lookupByIdentifier = async () => {
+    // Clear previous results while fetching new data
+    setByIdExists(null);
+    setByIdData(null);
     setLoadingId(true);
     const parts = identifier.split(':');
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
@@ -68,6 +73,10 @@ export default function Caip2Lookup() {
   };
 
   const lookupByHash = async () => {
+    // Clear previous results while fetching new data
+    setByHashChainId('');
+    setByHashData(null);
+    setByHashExists(null);
     setLoadingHash(true);
     const h = hashInput.trim();
     if (!/^0x[0-9a-fA-F]{64}$/.test(h)) {
@@ -116,23 +125,20 @@ export default function Caip2Lookup() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-primary/10">
-            <span className="text-xs text-muted-foreground font-medium">Chain Registration</span>
-          </div>
           <h1 className="text-4xl font-bold text-primary">
             CAIP-2 Maping
           </h1>
           <p className="text-foreground/90 text-md leading-relaxed">
             Use CAIP-2 attributes to link back to chain data —
             {' '}
-            <a className="underline" href="/learn#overview">Learn more</a>
+            <a className="underline" href="/learn">Learn more</a>
           </p>
         </div>
         {/* Hash first */}
         <Card className="border border-primary/10">
           <CardHeader>
             <CardTitle>Lookup by CAIP-2 Hash</CardTitle>
-            <CardDescription>Enter 32-byte hash (0x + 64 hex)</CardDescription>
+            <CardDescription>32-byte hash</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-2">
@@ -149,7 +155,14 @@ export default function Caip2Lookup() {
                 'Fetch Chain Data'
               )}
             </Button>
-            {byHashExists === false ? (
+            {loadingHash ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : byHashExists === false ? (
               <div className="text-sm text-muted-foreground">No chain data found for this hash.</div>
             ) : byHashData ? (
               <div className="text-sm space-y-2">
@@ -198,7 +211,14 @@ export default function Caip2Lookup() {
                 'Fetch Chain Data'
               )}
             </Button>
-            {byIdExists === false ? (
+            {loadingId ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : byIdExists === false ? (
               <div className="text-sm text-muted-foreground">No chain data found for this identifier.</div>
             ) : byIdData ? (
               <div className="text-sm space-y-2">

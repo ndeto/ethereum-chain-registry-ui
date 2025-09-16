@@ -1,12 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Link2, Hash, ArrowRight, Database, ShieldCheck, Link2Icon } from 'lucide-react'
+import { ArrowRight, Database, Link2Icon } from 'lucide-react'
 import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS, CAIP2_CONTRACT_ADDRESS } from '@/lib/addresses'
-import ChainDataForm from '@/components/ChainDataForm'
 
 export default function LearnPage() {
   return (
     <main className="bg-background p-6">
-      <div className="mx-auto max-w-5xl space-y-8">
+      <div className="mx-auto max-w-6xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold text-primary">
@@ -17,8 +16,21 @@ export default function LearnPage() {
           </p>
         </div>
 
-        {/* Overview (full‑width content) */}
-        <section id="overview" className="space-y-4">
+        {/* Docs layout grid */}
+        <div className="grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-6">
+          <aside className="md:sticky md:top-16 h-max border border-primary/10 rounded-lg bg-background/50 p-3 text-sm">
+            <div className="font-semibold text-foreground/90 mb-2">On this page</div>
+            <nav className="space-y-1">
+              <a href="#overview" className="block rounded px-2 py-1 hover:bg-primary/10 hover:text-primary">Overview</a>
+              <a href="#deployments" className="block rounded px-2 py-1 hover:bg-primary/10 hover:text-primary">Deployments</a>
+              <a href="#core-specs" className="block rounded px-2 py-1 hover:bg-primary/10 hover:text-primary">Core Specs</a>
+              <a href="#ens" className="block rounded px-2 py-1 hover:bg-primary/10 hover:text-primary">ENS Resolvers</a>
+              <a href="#interop" className="block rounded px-2 py-1 hover:bg-primary/10 hover:text-primary">Interop</a>
+            </nav>
+          </aside>
+          <div className="space-y-8">
+        {/* Overview */}
+        <section id="overview" className="space-y-4 scroll-mt-24">
           <h2 className="text-2xl font-semibold flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-primary" />
             Overview of the chain registration system
@@ -127,6 +139,7 @@ export default function LearnPage() {
         </Card>
 
         {/* Deployments (single source of truth) */}
+        <section id="deployments" className="scroll-mt-24">
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle>Deployments (Sepolia)</CardTitle>
@@ -170,8 +183,10 @@ export default function LearnPage() {
             </div>
           </CardContent>
         </Card>
+        </section>
 
         {/* Core specs */}
+        <section id="core-specs" className="scroll-mt-24">
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -199,8 +214,10 @@ export default function LearnPage() {
             </ul>
           </CardContent>
         </Card>
+        </section>
 
         {/* ENS */}
+        <section id="ens" className="scroll-mt-24">
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -219,8 +236,10 @@ export default function LearnPage() {
             </ul>
           </CardContent>
         </Card>
+        </section>
 
         {/* Interop */}
+        <section id="interop" className="scroll-mt-24">
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -236,7 +255,9 @@ export default function LearnPage() {
             </ul>
           </CardContent>
         </Card>
-
+        </section>
+          </div>
+        </div>
 
       </div>
     </main>

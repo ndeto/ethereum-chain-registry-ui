@@ -29,6 +29,14 @@ export default function Caip2Lookup() {
   const [loadingHash, setLoadingHash] = useState(false);
   const [loadingId, setLoadingId] = useState(false);
 
+  const normalizeChainData = (result: any) => {
+    if (Array.isArray(result)) {
+      const [chainName, settlementChainId, version, rollupContract, chainNamespace, chainReference, coinType] = result as any[];
+      return { chainName, settlementChainId, version, rollupContract, chainNamespace, chainReference, coinType };
+    }
+    return result;
+  };
+
   const lookupByIdentifier = async () => {
     // Clear previous results while fetching new data
     setByIdExists(null);
@@ -55,15 +63,16 @@ export default function Caip2Lookup() {
         functionName: 'caip2HashToChainId',
         args: [hash]
       }) as string;
-      const data = await (publicClient as any)!.readContract({
+      const rawData = await (publicClient as any)!.readContract({
         address: CHAIN_REGISTRY_ADDRESS as `0x${string}`,
         abi: CHAIN_REGISTRY_ABI as unknown as Abi,
         functionName: 'chainData',
         args: [chainId]
       });
-      const notFound = !data?.chainName && String((data as any)?.rollupContract).toLowerCase() === '0x0000000000000000000000000000000000000000';
+      const norm = normalizeChainData(rawData);
+      const notFound = !norm?.chainName && String(norm?.rollupContract || '').toLowerCase() === '0x0000000000000000000000000000000000000000';
       setByIdExists(!notFound);
-      setByIdData(data as any);
+      setByIdData(norm as any);
     } catch (e) {
       setByIdExists(null);
       setByIdData(null);
@@ -93,15 +102,16 @@ export default function Caip2Lookup() {
         functionName: 'caip2HashToChainId',
         args: [h]
       }) as string;
-      const data = await (publicClient as any)!.readContract({
+      const rawData = await (publicClient as any)!.readContract({
         address: CHAIN_REGISTRY_ADDRESS as `0x${string}`,
         abi: CHAIN_REGISTRY_ABI as unknown as Abi,
         functionName: 'chainData',
         args: [id]
       });
+      const data = normalizeChainData(rawData);
       setByHashChainId(id);
       setByHashData(data as any);
-      const notFound = !data?.chainName && String((data as any)?.rollupContract).toLowerCase() === '0x0000000000000000000000000000000000000000';
+      const notFound = !data?.chainName && String((data as any)?.rollupContract || '').toLowerCase() === '0x0000000000000000000000000000000000000000';
       setByHashExists(!notFound);
     } catch (e) {
       setByHashChainId('');
@@ -125,9 +135,7 @@ export default function Caip2Lookup() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-primary">
-            CAIP-2 Maping
-          </h1>
+          <h1 className="text-4xl font-bold text-primary">CAIP-2 Mapping</h1>
           <p className="text-foreground/90 text-md leading-relaxed">
             Use CAIP-2 attributes to link back to chain data —
             {' '}
@@ -138,7 +146,7 @@ export default function Caip2Lookup() {
         <Card className="border border-primary/10">
           <CardHeader>
             <CardTitle>Lookup by CAIP-2 Hash</CardTitle>
-            <CardDescription>32-byte hash</CardDescription>
+            <CardDescription>32-byte hash)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAccount, useChainId, usePublicClient } from 'wagmi';
 import ZincConnectButton from '@/components/ZincConnectButton';
 
@@ -8,9 +9,26 @@ export default function ZincNav() {
   const { isConnected } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient();
+  const pathname = usePathname();
 
   const networkName = publicClient?.chain?.name || (chainId ? `Chain ${chainId}` : '');
   const chainIdHex = chainId ? `0x${chainId.toString(16)}` : '';
+
+  const navLinks = [
+    { href: '/register', label: 'Register' },
+    { href: '/assign', label: 'Assign' },
+    { href: '/resolve', label: 'Resolve' },
+    { href: '/caip2', label: 'CAIP‑2' },
+    { href: '/learn', label: 'Learn' },
+  ];
+
+  const isActive = (href: string) => {
+    if (href === '/register') return pathname === '/' || pathname === '/register';
+    return pathname === href;
+  };
+
+  const linkCls = (href: string) =>
+    `px-0.5 ${isActive(href) ? 'text-zinc-100 font-semibold' : 'text-zinc-300'} hover:text-zinc-100`;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-900/80 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/60">
@@ -19,12 +37,12 @@ export default function ZincNav() {
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-zinc-100">
             <span>ERC‑7785</span>
           </Link>
-          <nav className="hidden items-center gap-4 text-sm text-zinc-300 md:flex">
-            <Link href="/" className="hover:text-zinc-100">Register</Link>
-            <Link href="/assign" className="hover:text-zinc-100">Assign</Link>
-            <Link href="/resolve" className="hover:text-zinc-100">Resolve</Link>
-            <Link href="/caip2" className="hover:text-zinc-100">CAIP‑2</Link>
-            <Link href="/learn" className="hover:text-zinc-100">Learn</Link>
+          <nav className="hidden items-center gap-4 text-sm md:flex">
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href} className={linkCls(l.href)} aria-current={isActive(l.href) ? 'page' : undefined}>
+                {l.label}
+              </Link>
+            ))}
           </nav>
         </div>
         <div className="flex items-center gap-3">
@@ -39,12 +57,12 @@ export default function ZincNav() {
       </div>
       {/* Mobile nav row */}
       <div className="mx-auto max-w-6xl md:hidden px-4 py-2 border-t border-zinc-800">
-        <nav className="flex items-center gap-4 text-sm text-zinc-300 overflow-x-auto whitespace-nowrap">
-          <Link href="/" className="hover:text-zinc-100">Register</Link>
-          <Link href="/assign" className="hover:text-zinc-100">Assign</Link>
-          <Link href="/resolve" className="hover:text-zinc-100">Resolve</Link>
-          <Link href="/caip2" className="hover:text-zinc-100">CAIP‑2</Link>
-          <Link href="/learn" className="hover:text-zinc-100">Learn</Link>
+        <nav className="flex items-center gap-4 text-sm overflow-x-auto whitespace-nowrap">
+          {navLinks.map((l) => (
+            <Link key={l.href} href={l.href} className={linkCls(l.href)} aria-current={isActive(l.href) ? 'page' : undefined}>
+              {l.label}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

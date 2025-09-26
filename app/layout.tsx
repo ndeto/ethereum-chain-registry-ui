@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'ERC‑7785 Registry Demo — Register, Assign, Resolve (CAIP‑2)',
+  title: 'ERC‑7785 Registry Demo — Register & Resolve',
   description:
     'Demo UI for the ERC‑7785 Chain Registry and Resolver. Register ChainData, assign human labels, resolve to chain IDs, and inspect CAIP‑2 identifiers and hashes.',
 };

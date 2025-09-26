@@ -2,10 +2,8 @@
 
 This is a Next.js demo for working with the ERC‑7785 Chain Registry and a Chain Resolver, with CAIP‑2/CAIP‑350 integration. It lets you:
 
-- Register ChainData on the registry (owner‑only) and get the ERC‑7785 chainId (bytes32)
-- Assign a human label to an ERC‑7785 chainId in the resolver (owner‑only)
-- Resolve a label to its chainId and ChainData, and view CAIP‑2 identifier and hash
-- Look up ChainData by CAIP‑2 identifier or hash
+- Register a label + chainId (owner‑only)
+- Resolve a label to its chainId
 
 ## Quick Start
 
@@ -56,7 +54,7 @@ If you want to run this UI against your own contracts:
 - Take the deployed addresses and place them in `.env.local` as shown
 - Restart the dev server to pick up the new env
 
-That’s it — the Register/Assign/Resolve/CAIP‑2 pages will now use your contracts.
+That’s it — the Register/Resolve/CAIP‑2 pages will now use your contracts.
 
 ## Pages
 
@@ -77,15 +75,9 @@ Notes:
 - Requires wallet connection and Sepolia. Demo endpoint is open; use `register` on production.
 - After confirmation, the page shows the emitted chainId (bytes32).
 
-### Assign — `/assign`
+### Assign
 
-Demo UI calls `resolver.demoAssign(label, chainId)` (unrestricted). On production, restrict to `assign` (owner‑only):
-
-- Label: human label (lowercase). Full name is `<label>.cid.eth`.
-- Chain ID: 32‑byte hex string (0x + 64 hex) produced by registering ChainData.
-- Extras: “Check Current Mapping” uses `computeNode(label)` + `nodeToChainId(node)` to show existing assignment.
-
-Requires wallet connection and Sepolia. Demo endpoint is open; use `assign` on production.
+This demo no longer has a dedicated Assign page; registration handles both writing the registry record and registering the label with the resolver.
 
 ### Resolve — `/resolve`
 
@@ -121,8 +113,7 @@ Reference hub for specs used by the app:
 
 1. Register ChainData on the registry (owner)
 2. Copy the emitted chainId (bytes32). Displayed on the UI
-3. Assign `<label>` to that chainId in the resolver (owner)
-4. Resolve `<label>.cid.eth` to verify mapping, and view ChainData + CAIP‑2
+3. Resolve `<label>.cid.eth` to verify mapping
 
 ## Scripts
 

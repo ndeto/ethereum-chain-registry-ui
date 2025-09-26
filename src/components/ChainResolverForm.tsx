@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import { type Abi } from 'viem';
-import { ethers, Interface, dnsEncode, keccak256, toUtf8Bytes, AbiCoder, getBytes, hexlify } from 'ethers';
+import { ethers, Interface, dnsEncode, keccak256, toUtf8Bytes, AbiCoder, getBytes, hexlify, concat } from 'ethers';
 import { CHAIN_RESOLVER_ADDRESS, REVERSE_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { Loader2, Search } from 'lucide-react';
 const RESOLVER = CHAIN_RESOLVER_ADDRESS as string;
@@ -76,7 +76,8 @@ const ChainResolverForm: React.FC = () => {
         functionName: 'resolve',
         args: [dnsName as unknown as `0x${string}`, callData as `0x${string}`]
       }) as `0x${string}`;
-      const [hexNo0x] = textIface.decodeFunctionResult('text', chainIdAnswer) as [string];
+      // ethers v6 returns a Result type; cast via unknown to satisfy TS
+      const [hexNo0x] = (textIface.decodeFunctionResult('text', chainIdAnswer) as unknown as [string]);
       const chainIdHex = `0x${hexNo0x}`;
       setResolvedChainIdHex(chainIdHex);
       toast({ title: 'Resolved', description: 'Chain ID resolved via resolver.' });
@@ -95,7 +96,7 @@ const ChainResolverForm: React.FC = () => {
         const reverseAddr = REVERSE_RESOLVER_ADDRESS as string;
         if (reverseAddr && /^0x[a-fA-F0-9]{40}$/.test(reverseAddr) && reverseAddr !== '0x0000000000000000000000000000000000000000') {
           const prefix = AbiCoder.defaultAbiCoder().encode(['string'], ['chain-name:']);
-          const keyBytes = hexlify(new Uint8Array([...getBytes(prefix), ...getBytes(chainIdHex)]));
+          const keyBytes = hexlify(concat([getBytes(prefix), getBytes(chainIdHex)]));
           const dataIface = new Interface(['function data(bytes32,bytes) view returns (bytes)']);
           const call = dataIface.encodeFunctionData('data', ['0x' + '00'.repeat(32), keyBytes]);
           const revAns = await (publicClient as any)!.readContract({
@@ -104,10 +105,11 @@ const ChainResolverForm: React.FC = () => {
             functionName: 'resolve',
             args: ['0x00' as `0x${string}`, call as `0x${string}`]
           }) as `0x${string}`;
-          const [encoded] = new Interface(['function data(bytes32,bytes) view returns (bytes)']).decodeFunctionResult('data', revAns) as [`0x${string}`];
+          const [encoded] = (new Interface(['function data(bytes32,bytes) view returns (bytes)']).decodeFunctionResult('data', revAns) as unknown as [`0x${string}`]);
           let nameOut = '';
           try {
-            [nameOut] = AbiCoder.defaultAbiCoder().decode(['string'], encoded) as [string];
+            const decodedName = AbiCoder.defaultAbiCoder().decode(['string'], encoded) as unknown as [string];
+            [nameOut] = decodedName;
           } catch {
             const hex = (encoded as string).replace(/^0x/, '');
             nameOut = Buffer.from(hex, 'hex').toString('utf8');

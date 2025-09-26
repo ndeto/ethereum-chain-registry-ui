@@ -62,17 +62,16 @@ const RegisterMinimalForm: React.FC = () => {
       setResStatus('idle');
       // Optional network hint
       try { await switchChain({ chainId: TARGET_CHAIN_ID }); } catch { }
-
-      // Heads-up toast: two transactions
+      // Heads-up: two transactions before first prompt
       toast({ title: 'Action Required', description: 'You will sign 2 transactions: (1) Registry.register, (2) Resolver.register.' });
 
       // 1) Registry.register(name, owner=account, chainId=bytes32)
       const tx1 = await writeContractAsync({
         address: registry,
         abi: CHAIN_REGISTRY_ABI as unknown as Abi,
-        functionName: 'register',
+        functionName: 'demoRegister',
         args: [name, account as `0x${string}`, cid],
-      });
+      } as any);
       toast({ title: 'Registry: Submitted', description: 'Waiting for confirmation…' });
       await publicClient!.waitForTransactionReceipt({ hash: tx1 });
       toast({ title: 'Registry: Confirmed', description: 'Chain registered.' });
@@ -84,15 +83,26 @@ const RegisterMinimalForm: React.FC = () => {
       const tx2 = await writeContractAsync({
         address: resolver,
         abi: CHAIN_RESOLVER_ABI as unknown as Abi,
-        functionName: 'register',
+        functionName: 'demoRegister',
         args: [labelHash, account as `0x${string}`],
-      });
+      } as any);
       toast({ title: 'Resolver: Submitted', description: 'Waiting for confirmation…' });
       await publicClient!.waitForTransactionReceipt({ hash: tx2 });
       toast({ title: 'Resolver: Confirmed', description: 'Label registered with resolver.' });
       setResStatus('confirmed');
 
       setResult({ label: name, chainId: cid });
+      // Persist state so the next step (Resolve) can pick it up
+      try {
+        // Update current URL with query params
+        const params = new URLSearchParams(window.location.search);
+        params.set('label', name);
+        params.set('chainId', cid);
+        window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+        // Local fallback
+        localStorage.setItem('lastRegisteredLabel', name);
+        localStorage.setItem('lastRegisteredChainId', cid);
+      } catch {}
       setLabel('');
       setChainIdHex('');
     } catch (e: any) {

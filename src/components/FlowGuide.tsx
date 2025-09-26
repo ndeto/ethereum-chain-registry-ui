@@ -48,7 +48,7 @@ export default function FlowGuide() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/register" className="inline-block">
+            <Link href="/" className="inline-block">
               <Button variant="secondary">Go to Register</Button>
             </Link>
           </CardContent>

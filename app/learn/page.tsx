@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight, Database, Link2Icon } from 'lucide-react'
-import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses'
+import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS, REVERSE_RESOLVER_ADDRESS } from '@/lib/addresses'
 
 export default function LearnPage() {
   return (
@@ -8,12 +8,8 @@ export default function LearnPage() {
       <div className="mx-auto max-w-6xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-primary">
-            ERC‑7785: Reference Hub
-          </h1>
-          <p className="text-foreground/90 text-md leading-relaxed">
-            Key specs, resolver docs, and interop resources mentioned across the app.
-          </p>
+          <h1 className="text-4xl font-bold text-primary">Register & Resolve — Reference Hub</h1>
+          <p className="text-foreground/90 text-md leading-relaxed">A minimal on‑chain system that maps human labels to chain identifiers and back, using a Registry and ENSIP‑10 resolvers.</p>
         </div>
 
         {/* Docs layout grid */}
@@ -33,17 +29,9 @@ export default function LearnPage() {
         <section id="overview" className="space-y-4 scroll-mt-24">
           <h2 className="text-2xl font-semibold flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-primary" />
-            Overview of the chain registration system
+            Overview
           </h2>
-          <p className="text-sm text-muted-foreground">
-            <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md">ERC‑7785</a>
-            {' '}defines a deterministic 32‑byte chain identifier derived from a chain’s name and supporting attributes.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            This on‑chain Registry aims to replace
-            {' '}<a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ethereum-lists/chains/tree/master/_data/chains">ethereum‑lists/chains</a>
-            {' '}as the canonical source of chain metadata.
-          </p>
+          <p className="text-sm text-muted-foreground">Three contracts work together to provide forward and reverse lookups:</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
               <div className="flex items-center gap-2 mb-1">
@@ -51,92 +39,36 @@ export default function LearnPage() {
                 <strong>Registry (IChainRegistry)</strong>
               </div>
               <div className="text-sm text-muted-foreground">
-                Stores chain metadata (chain id, name); computes deterministic <code className="font-mono">bytes32</code> identifier.
-                Functions: <code className="font-mono">register</code>, <code className="font-mono">demoRegister</code>, <code className="font-mono">chainData(bytes32)</code>.
+                Minimal read surface for resolution. Keys by <code className="font-mono">labelhash</code> (keccak256(bytes(label))).
+                Exposed reads:
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  <li><code className="font-mono">chainId(bytes32 labelHash)</code> → <code className="font-mono">bytes</code></li>
+                  <li><code className="font-mono">chainName(bytes chainIdBytes)</code> → <code className="font-mono">string</code></li>
+                </ul>
               </div>
             </div>
             <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
               <div className="flex items-center gap-2 mb-1">
                 <Link2Icon className="h-4 w-4 text-primary" />
-                <strong>Resolver (ChainResolver)</strong>
+                <strong>Forward Resolver (ChainResolver)</strong>
               </div>
               <div className="text-sm text-muted-foreground">
-                Maps human labels to identifiers; supports <code className="font-mono">resolve(bytes,bytes)</code> for reads.
-                Helpers: <code className="font-mono">computeNode</code>, <code className="font-mono">nodeToChainId</code>, <code className="font-mono">assign</code>.
+                Resolves a label’s node to its chain‑id via <code className="font-mono">resolve(bytes name, bytes data)</code> (ENSIP‑10).
+                Two paths: <code className="font-mono">text(node,"chain-id")</code> (hex string) and <code className="font-mono">data(node,bytes("chain-id"))</code> (raw bytes).
               </div>
             </div>
-          </div>
-          {/* Contracts & Repos placed before flow */}
-          <div>
-            <div className="font-medium mb-2">Contracts & Repos</div>
-            <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-              <li>
-                Registry implementation — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/erc-7785-registry">erc-7785-registry</a>
-              </li>
-              <li>
-                ChainRegistry.sol — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/ChainRegistry.sol">source</a>
-              </li>
-              <li>
-                ChainResolver.sol — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/ChainResolver.sol">source</a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-medium mb-2">Flow through the contracts</div>
-            <ol className="list-decimal pl-5 space-y-1 text-sm text-foreground/80">
-              <li>
-                Provide <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/erc-7785-registry/blob/main/src/interfaces/IChainRegistry.sol#L4">ChainData</a> (name, settlement chain ID, version, rollup contract, CAIP‑2 namespace/reference, coin type).
-              </li>
-              <li>
-                Send a transaction to <code className="font-mono">register(ChainData)</code>; on the Registry or use <code className="font-mono">demoRegister</code> to simulate.
-              </li>
-              <li>
-                The Registry derives <code className="font-mono">bytes32 chainId</code> via <code className="font-mono">keccak256(abi.encode(...fields))</code>. Read via <code className="font-mono">chainData(chainId)</code>.
-              </li>
-              <li>
-                In the Resolver, map a label to <code className="font-mono">chainId</code> using <code className="font-mono">assign</code>. Helpers: <code className="font-mono">computeNode</code> → <code className="font-mono">nodeToChainId</code>.
-              </li>
-              <li>
-                Resolve reads: call <code className="font-mono">resolve(bytes,bytes)</code> (ENSIP‑10) with <code className="font-mono">text(node, "chain-id")</code>.
-              </li>
-            </ol>
+            <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
+              <div className="flex items-center gap-2 mb-1">
+                <Link2Icon className="h-4 w-4 text-primary" />
+                <strong>Reverse Resolver (ReverseChainResolver)</strong>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Resolves a chain‑id back to the chain name using <code className="font-mono">"chain-name:"</code> keys with <code className="font-mono">resolve</code>. Binary‑safe path: <code className="font-mono">data(node, abi.encode("chain-name:") || chainIdBytes)</code>.
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* CAIP-2 Context & Mapping */}
-        <Card id="caip2-context" className="border border-primary/10 bg-background/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              CAIP‑2 Context & Mapping
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>
-                The <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> identifier is the chain selector in the form
-                <code className="font-mono"> namespace:reference </code>
-                (for example, <code className="font-mono">eip155:1</code> for Ethereum mainnet). This page lets you:
-              </p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Resolve a CAIP‑2 identifier to its ChainData via the registry.</li>
-                <li>Reverse‑lookup from a CAIP‑2 hash to the chainId and ChainData.</li>
-              </ul>
-              <p>
-                The <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">CAIP‑2</a> identifier is already present in <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">ERC‑7930</a> chain‑aware addresses. By incorporating it into the ERC‑7785 chain identifier, we get a direct way to map an <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">ERC‑7930</a> binary address back to its network using the chain’s CAIP‑2 identifier, and then fetch the authoritative ChainData from the registry.
-              </p>
-              <p>
-                Reference: <a
-                  href="https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  ERC‑7785: CAIP‑2 and CAIP‑350 integration
-                </a>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Deployments (single source of truth) */}
         <section id="deployments" className="scroll-mt-24">
@@ -159,7 +91,7 @@ export default function LearnPage() {
                 </a>
               </div>
               <div className="flex items-center gap-2">
-                <strong>Resolver:</strong>
+                <strong>Forward Resolver:</strong>
                 <a
                   href={`https://sepolia.etherscan.io/address/${CHAIN_RESOLVER_ADDRESS}`}
                   target="_blank"
@@ -167,6 +99,17 @@ export default function LearnPage() {
                   className="underline break-all"
                 >
                   {CHAIN_RESOLVER_ADDRESS}
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <strong>Reverse Resolver:</strong>
+                <a
+                  href={`https://sepolia.etherscan.io/address/${REVERSE_RESOLVER_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline break-all"
+                >
+                  {REVERSE_RESOLVER_ADDRESS}
                 </a>
               </div>
               {/* CAIP-2 removed in this demo */}

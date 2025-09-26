@@ -154,6 +154,17 @@ export const CHAIN_REGISTRY_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "string", name: "_chainName", type: "string" },
+      { internalType: "address", name: "_owner", type: "address" },
+      { internalType: "bytes", name: "_chainId", type: "bytes" },
+    ],
+    name: "demoRegister",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "renounceOwnership",
     outputs: [],
@@ -325,6 +336,13 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "chainIDRegistry",
     outputs: [
       { internalType: "contract IChainRegistry", name: "", type: "address" },
@@ -474,10 +492,30 @@ export const CHAIN_RESOLVER_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "address", name: "_owner", type: "address" },
+    ],
+    name: "demoRegister",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
     name: "supportsInterface",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "pure",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "address", name: "_owner", type: "address" },
+    ],
+    name: "register",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {

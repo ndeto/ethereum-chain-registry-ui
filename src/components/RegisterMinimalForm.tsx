@@ -56,6 +56,25 @@ const RegisterMinimalForm: React.FC = () => {
     }
 
     try {
+      // Preflight: ensure label is unique in the registry
+      const preLabelHash = keccak256(toUtf8Bytes(name)) as `0x${string}`;
+      try {
+        const existingCid = await (publicClient as any)!.readContract({
+          address: registry,
+          abi: CHAIN_REGISTRY_ABI as unknown as Abi,
+          functionName: 'chainId',
+          args: [preLabelHash],
+        }) as `0x${string}`;
+        if (existingCid && typeof existingCid === 'string' && existingCid !== '0x') {
+          toast({
+            variant: 'destructive',
+            title: 'Label Already Registered',
+            description: `Labels must be unique. Confirm on Resolve: /resolve?label=${name}&auto=1`,
+          });
+          return;
+        }
+      } catch {}
+
       setSubmitting(true);
       setResult(null);
       setRegStatus('pending');
@@ -73,8 +92,13 @@ const RegisterMinimalForm: React.FC = () => {
         args: [name, account as `0x${string}`, cid],
       } as any);
       toast({ title: 'Registry: Submitted', description: 'Waiting for confirmation…' });
-      await publicClient!.waitForTransactionReceipt({ hash: tx1 });
-      toast({ title: 'Registry: Confirmed', description: 'Chain registered.' });
+      {
+        const rcpt: any = await publicClient!.waitForTransactionReceipt({ hash: tx1 });
+        if (rcpt?.status !== 'success') {
+          throw new Error('Registry transaction reverted');
+        }
+      }
+      toast({ title: 'Registry: Confirmed', description: 'Chain registered on registry.' });
       setRegStatus('confirmed');
 
       // 2) Resolver.register(labelHash, owner=account)
@@ -87,7 +111,12 @@ const RegisterMinimalForm: React.FC = () => {
         args: [labelHash, account as `0x${string}`],
       } as any);
       toast({ title: 'Resolver: Submitted', description: 'Waiting for confirmation…' });
-      await publicClient!.waitForTransactionReceipt({ hash: tx2 });
+      {
+        const rcpt: any = await publicClient!.waitForTransactionReceipt({ hash: tx2 });
+        if (rcpt?.status !== 'success') {
+          throw new Error('Resolver transaction reverted');
+        }
+      }
       toast({ title: 'Resolver: Confirmed', description: 'Label registered with resolver.' });
       setResStatus('confirmed');
 
@@ -119,7 +148,7 @@ const RegisterMinimalForm: React.FC = () => {
     <Card className="border border-primary/10 bg-background/50 shadow-none">
       <CardHeader>
         <CardDescription>
-          <li >The owner of this label will be the connected wallet.</li>
+          The owner of this label will be the connected wallet.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

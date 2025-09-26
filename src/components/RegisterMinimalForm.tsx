@@ -26,6 +26,9 @@ const RegisterMinimalForm: React.FC = () => {
   const [chainIdHex, setChainIdHex] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ label: string; chainId: string } | null>(null);
+  type StepStatus = 'idle' | 'pending' | 'confirmed' | 'error';
+  const [regStatus, setRegStatus] = useState<StepStatus>('idle');
+  const [resStatus, setResStatus] = useState<StepStatus>('idle');
 
   const validAddr = (x?: string) => !!x && /^0x[a-fA-F0-9]{40}$/.test(x) && x !== '0x0000000000000000000000000000000000000000';
   const validBytes32 = (x: string) => /^0x[0-9a-fA-F]{64}$/.test(x);
@@ -54,6 +57,9 @@ const RegisterMinimalForm: React.FC = () => {
 
     try {
       setSubmitting(true);
+      setResult(null);
+      setRegStatus('pending');
+      setResStatus('idle');
       // Optional network hint
       try { await switchChain({ chainId: TARGET_CHAIN_ID }); } catch {}
 
@@ -70,8 +76,10 @@ const RegisterMinimalForm: React.FC = () => {
       toast({ title: 'Registry: Submitted', description: 'Waiting for confirmation…' });
       await publicClient!.waitForTransactionReceipt({ hash: tx1 });
       toast({ title: 'Registry: Confirmed', description: 'Chain registered.' });
+      setRegStatus('confirmed');
 
       // 2) Resolver.register(labelHash, owner=account)
+      setResStatus('pending');
       const labelHash = keccak256(toUtf8Bytes(name)) as `0x${string}`;
       const tx2 = await writeContractAsync({
         address: resolver,
@@ -82,6 +90,7 @@ const RegisterMinimalForm: React.FC = () => {
       toast({ title: 'Resolver: Submitted', description: 'Waiting for confirmation…' });
       await publicClient!.waitForTransactionReceipt({ hash: tx2 });
       toast({ title: 'Resolver: Confirmed', description: 'Label registered with resolver.' });
+      setResStatus('confirmed');
 
       setResult({ label: name, chainId: cid });
       setLabel('');
@@ -89,6 +98,8 @@ const RegisterMinimalForm: React.FC = () => {
     } catch (e: any) {
       const msg = e?.shortMessage || e?.reason || e?.message || 'Transaction failed.';
       toast({ variant: 'destructive', title: 'Register Failed', description: msg });
+      if (regStatus === 'pending') setRegStatus('error');
+      if (resStatus === 'pending') setResStatus('error');
     } finally {
       setSubmitting(false);
     }
@@ -116,8 +127,45 @@ const RegisterMinimalForm: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onSubmit} disabled={submitting || switching} className="w-full">{submitting ? 'Submitting…' : 'Register'}</Button>
+          <Button onClick={onSubmit} disabled={submitting || switching} className="w-full">
+            {submitting
+              ? regStatus === 'pending' || (regStatus === 'confirmed' && resStatus === 'idle')
+                ? 'Registering…'
+                : resStatus === 'pending'
+                  ? 'Assigning…'
+                  : 'Submitting…'
+              : 'Register'}
+          </Button>
         </div>
+
+        {(submitting || regStatus !== 'idle' || resStatus !== 'idle') && (
+          <div className="mt-3 space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className={
+                regStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
+                regStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
+                regStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+              } />
+              <span>Register on Registry</span>
+              <span className="ml-auto text-xs opacity-70">
+                {regStatus === 'confirmed' ? 'confirmed' : regStatus === 'pending' ? 'submitting' : regStatus === 'error' ? 'failed' : ''}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={
+                resStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
+                resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
+                resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+              } />
+              <span>Assign on Resolver</span>
+              <span className="ml-auto text-xs opacity-70">
+                {resStatus === 'confirmed' ? 'confirmed' : resStatus === 'pending' ? 'submitting' : resStatus === 'error' ? 'failed' : ''}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Result mapping */}
         {submitting ? (

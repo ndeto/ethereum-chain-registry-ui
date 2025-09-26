@@ -86,7 +86,7 @@ const ChainResolverForm: React.FC = () => {
         const params = new URLSearchParams(window.location.search);
         params.set('label', name);
         params.set('auto', '1');
-        params.set('chainId', chainId);
+        params.set('chainId', chainIdHex);
         window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
       } catch { }
 
@@ -153,7 +153,20 @@ const ChainResolverForm: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="chainRef" className="text-sm font-medium">Chain Reference</Label>
                 <div className="relative">
-                  <Input id="chainRef" placeholder="e.g., base" value={inputName} onChange={(e) => setInputName(e.target.value)} className="pr-20" />
+                  <Input
+                    id="chainRef"
+                    placeholder="e.g., base"
+                    value={inputName}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setInputName(v);
+                      if (resolvedChainIdHex || resolvedName) {
+                        setResolvedChainIdHex('');
+                        setResolvedName('');
+                      }
+                    }}
+                    className="pr-20"
+                  />
                   <span className="absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground pointer-events-none">.cid.eth</span>
                 </div>
                 <div className="text-xs text-muted-foreground">Full name: <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code></div>

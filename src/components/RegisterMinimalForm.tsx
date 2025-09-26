@@ -61,7 +61,7 @@ const RegisterMinimalForm: React.FC = () => {
       setRegStatus('pending');
       setResStatus('idle');
       // Optional network hint
-      try { await switchChain({ chainId: TARGET_CHAIN_ID }); } catch {}
+      try { await switchChain({ chainId: TARGET_CHAIN_ID }); } catch { }
 
       // Heads-up toast: two transactions
       toast({ title: 'Action Required', description: 'You will sign 2 transactions: (1) Registry.register, (2) Resolver.register.' });
@@ -108,9 +108,8 @@ const RegisterMinimalForm: React.FC = () => {
   return (
     <Card className="border border-primary/10 bg-background/50 shadow-none">
       <CardHeader>
-        <CardTitle>Register</CardTitle>
         <CardDescription>
-          Owner is the connected wallet. Chain ID must be bytes32 hex. This flow will prompt for two signatures: Registry then Resolver.
+          <li >The owner of this label will be the connected wallet.</li>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -143,9 +142,9 @@ const RegisterMinimalForm: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className={
                 regStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
-                regStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
-                regStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
-                'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+                  regStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
+                    regStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                      'inline-block h-2.5 w-2.5 rounded-full bg-muted'
               } />
               <span>Register on Registry</span>
               <span className="ml-auto text-xs opacity-70">
@@ -155,9 +154,9 @@ const RegisterMinimalForm: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className={
                 resStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
-                resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
-                resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
-                'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+                  resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
+                    resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                      'inline-block h-2.5 w-2.5 rounded-full bg-muted'
               } />
               <span>Assign on Resolver</span>
               <span className="ml-auto text-xs opacity-70">

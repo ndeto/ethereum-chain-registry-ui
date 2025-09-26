@@ -13,9 +13,9 @@ export default function RegisterPostDemo() {
       <Card className="border border-primary/10 bg-background/50 shadow-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            Assign & Resolve
+            Resolve
           </CardTitle>
-          <CardDescription>After registering, map a label and resolve it.</CardDescription>
+          <CardDescription>After registering, resolve your label to verify the mapping.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
@@ -25,9 +25,6 @@ export default function RegisterPostDemo() {
             <code className="font-mono">data = encode(text(node, "chain-id"))</code>.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Link href="/assign" className="inline-block">
-              <Button variant="secondary">Go to Assign</Button>
-            </Link>
             <Link href="/resolve" className="inline-block">
               <Button variant="secondary">Go to Resolve</Button>
             </Link>

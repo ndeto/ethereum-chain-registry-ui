@@ -108,7 +108,7 @@ const RegisterMinimalForm: React.FC = () => {
   return (
     <Card className="border border-primary/10 bg-background/50 shadow-none">
       <CardHeader>
-        <CardTitle>Register (Minimal)</CardTitle>
+        <CardTitle>Register</CardTitle>
         <CardDescription>
           Owner is the connected wallet. Chain ID must be bytes32 hex. This flow will prompt for two signatures: Registry then Resolver.
         </CardDescription>
@@ -149,7 +149,7 @@ const RegisterMinimalForm: React.FC = () => {
               } />
               <span>Register on Registry</span>
               <span className="ml-auto text-xs opacity-70">
-                {regStatus === 'confirmed' ? 'confirmed' : regStatus === 'pending' ? 'submitting' : regStatus === 'error' ? 'failed' : ''}
+                {regStatus === 'confirmed' ? 'Confirmed' : regStatus === 'pending' ? 'Submitting' : regStatus === 'error' ? 'Failed' : ''}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ const RegisterMinimalForm: React.FC = () => {
               } />
               <span>Assign on Resolver</span>
               <span className="ml-auto text-xs opacity-70">
-                {resStatus === 'confirmed' ? 'confirmed' : resStatus === 'pending' ? 'submitting' : resStatus === 'error' ? 'failed' : ''}
+                {resStatus === 'confirmed' ? 'Confirmed' : resStatus === 'pending' ? 'Submitting' : resStatus === 'error' ? 'Failed' : ''}
               </span>
             </div>
           </div>

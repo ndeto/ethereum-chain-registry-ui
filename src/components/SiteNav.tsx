@@ -38,20 +38,6 @@ export default function SiteNav() {
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>
-            
-            <NavigationMenuItem>
-              <Link href="/assign" legacyBehavior passHref>
-                <NavigationMenuLink
-                  className={cn(
-                    navigationMenuTriggerStyle(),
-                    isActive('/assign') && 'bg-primary/10 text-primary'
-                  )}
-                  aria-current={isActive('/assign') ? 'page' : undefined}
-                >
-                  Assign
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
             <NavigationMenuItem>
               <Link href="/resolve" legacyBehavior passHref>
                 <NavigationMenuLink

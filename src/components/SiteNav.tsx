@@ -52,19 +52,6 @@ export default function SiteNav() {
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Link href="/caip2" legacyBehavior passHref>
-                <NavigationMenuLink
-                  className={cn(
-                    navigationMenuTriggerStyle(),
-                    isActive('/caip2') && 'bg-primary/10 text-primary'
-                  )}
-                  aria-current={isActive('/caip2') ? 'page' : undefined}
-                >
-                  CAIP-2
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
               <Link href="/learn" legacyBehavior passHref>
                 <NavigationMenuLink
                   className={cn(

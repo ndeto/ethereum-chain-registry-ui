@@ -1,6 +1,6 @@
 # ERC‑7785 Registry Demo
 
-This is a Next.js demo for working with the ERC‑7785 Chain Registry and a Chain Resolver, with CAIP‑2/CAIP‑350 integration. It lets you:
+This is a Next.js demo for working with the ERC‑7785 Chain Registry and a Chain Resolver. It lets you:
 
 - Register a label + chainId (owner‑only)
 - Resolve a label to its chainId
@@ -54,7 +54,7 @@ If you want to run this UI against your own contracts:
 - Take the deployed addresses and place them in `.env.local` as shown
 - Restart the dev server to pick up the new env
 
-That’s it — the Register/Resolve/CAIP‑2 pages will now use your contracts.
+That’s it — the Register/Resolve pages will now use your contracts.
 
 ## Pages
 
@@ -92,20 +92,15 @@ This resolver supports ENSIP‑10 reads. Clients can call `resolve(name, data)` 
 
 Reference: [CAIP‑2 and CAIP‑350 in ERC‑7785](https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md#caip-2-and-caip-350-integration-in-erc-7785-chain-identifier)
 
-### CAIP‑2 — `/caip2`
+### CAIP‑2
 
-Two lookups:
-
-- By CAIP‑2 Hash (first): calls `registry.caip2HashToChainId(hash)` then `registry.chainData(chainId)`
-- By CAIP‑2 Identifier: computes hash using the on‑chain hasher, then same as above
-
-Buttons show a loading spinner and disable while fetching.
+Removed in this demo.
 
 ### Learn — `/learn`
 
 Reference hub for specs used by the app:
 
-- ERC‑7785 proposal, EIP‑155, CAIP‑2, ERC‑7930
+- ERC‑7785 proposal, EIP‑155, ERC‑7930
 - ENSIP‑10 (resolve) and ENSIP‑11 (coin types)
 - Optimism interop docs (Superchain devnet)
 

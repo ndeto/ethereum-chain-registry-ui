@@ -13,6 +13,18 @@ export default function LearnPage() {
             This app demos an on-chain registry for mapping a short label (like <code className="font-mono">base</code>)
             to an ERC‑7930 chain identifier and back again. It uses a Registry for storage and two ENSIP‑10 resolvers for reads.
           </p>
+          <p className="text-xs text-muted-foreground">
+            Looking for a deeper dive? Read the contracts README{' '}
+            <a
+              className="underline"
+              target="_blank"
+              rel="noreferrer"
+              href="https://github.com/unruggable-labs/chain-registry#readme"
+            >
+              on GitHub
+            </a>
+            .
+          </p>
         </div>
 
         {/* Architecture overview */}
@@ -21,7 +33,6 @@ export default function LearnPage() {
             <CardTitle className="flex items-center gap-2">
               <ArrowRight className="h-5 w-5 text-primary" /> Architecture Overview
             </CardTitle>
-            <CardDescription>High‑level data flow across the registry and resolvers.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="w-full overflow-hidden rounded-lg border border-primary/10 bg-muted/10 flex justify-center">
@@ -42,12 +53,9 @@ export default function LearnPage() {
               <CardTitle className="flex items-center gap-2">
                 Registry (ChainRegistry.sol)
               </CardTitle>
-              <CardDescription>Stores chain IDs and label mappings keyed by labelhash.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>
-                Keyed by <code className="font-mono">labelhash</code> (e.g. <code className="font-mono">keccak256(bytes("base"))</code>) and exposes two read functions.
-              </p>
+              <p>The chain registry stores chain IDs and their label mappings. Its interface must expose two functions to interoperate with the resolvers.</p>
               <ul className="list-disc pl-5 space-y-0.5">
                 <li><code className="font-mono">chainId(bytes32 labelHash)</code> → <code className="font-mono">bytes</code></li>
                 <li><code className="font-mono">chainName(bytes chainIdBytes)</code> → <code className="font-mono">string</code></li>
@@ -65,15 +73,15 @@ export default function LearnPage() {
               <CardTitle className="flex items-center gap-2">
                 Forward Resolver (ChainResolver.sol)
               </CardTitle>
-              <CardDescription>ENSIP‑10 wildcard resolver for forward lookups.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-3">
-              <p>Resolver features:</p>
+                          <p>This is a fully featured ENS resolver that can resolve chain IDs from chain labels. In accordance with ENSIP-10, it implements the resolve () function.</p>
+
               <ul className="list-disc pl-5 space-y-0.5">
-                <li>ABI: <code className="font-mono">resolve(bytes name, bytes data) returns (bytes)</code></li>
-                <li><code className="font-mono">labelhash = keccak256(bytes('&lt;label&gt;'))</code></li>
+                <li>Resolve function: <code className="font-mono">resolve(bytes name, bytes data) returns (bytes)</code></li>
+                
                 <li>
-                  Chain‑ID reads:
+                  Reads:
                   <div className="mt-1 pl-4">
                     <div>
                       • <code className="font-mono">text(labelhash, 'chain-id')</code> → <span className="font-mono">string</span> hex (no <span className="font-mono">0x</span>) — introduced by
@@ -85,6 +93,7 @@ export default function LearnPage() {
                     </div>
                   </div>
                 </li>
+                <li>Labelhash: <code className="font-mono">labelhash = keccak256(bytes('&lt;label&gt;'))</code></li>
                 <li>Source of truth: values always come from the Registry (stored records ignored).</li>
                 <li>Also supports the full suite of ENS selectors like addresses, multi-coin addresses, content hashes, text records.</li>
               </ul>
@@ -105,24 +114,20 @@ export default function LearnPage() {
               <CardTitle className="flex items-center gap-2">
                 Reverse Resolver (ReverseChainResolver.sol)
               </CardTitle>
-              <CardDescription>ENSIP‑10 wildcard resolver for reverse lookups.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-3">
               <p>
-                Reads via <code className="font-mono">resolve</code> with <code className="font-mono">"chain-name:"</code> keys. You can pass the root name (<code className="font-mono">0x00</code>) for
-                <code className="font-mono"> name</code> — the left‑most label is ignored.
+                In the ReverseChainResolver (ENSIP‑10 wildcard), clients call
+                <code className="font-mono"> resolve(bytes name, bytes data)</code> using the text record
+                <code className="font-mono"> "chain-name:&lt;chainId&gt;"</code> to reverse an ERC‑7930 chain identifier into its human‑readable label.
               </p>
               <ul className="list-disc pl-5 space-y-0.5">
                 <li>
                   Text path: <code className="font-mono">"chain-name:" + ascii(chainIdString)</code> — adopts Service Key Parameters from
                   <a className="underline ml-1" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑17</a>
                 </li>
-                <li>
-                  Data path (binary‑safe): <code className="font-mono">abi.encode("chain-name:") || chainIdBytes</code> — per
-                  <a className="underline ml-1" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑17</a>
-                </li>
+
               </ul>
-              <p className="opacity-80">Use the data path for arbitrary‑length identifier bytes; the text path expects a hex string.</p>
               <p>Reverse resolution flow:</p>
               <div className="w-full overflow-hidden rounded-lg border border-primary/10 bg-muted/10 flex justify-center">
                 <img

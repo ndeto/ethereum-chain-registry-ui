@@ -8,16 +8,19 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import { type Abi } from 'viem';
-import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
-import { fetchChainDataById } from '@/lib/registry';
-import { buildCaip2Identifier, computeCaip2HashOnChain } from '@/lib/caip2';
+import { ethers } from 'ethers';
+import { CHAIN_RESOLVER_ADDRESS, CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
 import { Loader2, Search } from 'lucide-react';
 const RESOLVER = CHAIN_RESOLVER_ADDRESS as string;
 
-// ChainResolver ABI subset per provided contract
+// ENSIP-10 resolve() surface and registry reads
 const CHAIN_RESOLVER_ABI = [
-  { type: 'function', name: 'computeNode', stateMutability: 'pure', inputs: [{ name: 'chainName', type: 'string' }], outputs: [{ name: '', type: 'bytes32' }] },
-  { type: 'function', name: 'nodeToChainId', stateMutability: 'view', inputs: [{ name: '', type: 'bytes32' }], outputs: [{ name: '', type: 'bytes32' }] },
+  { type: 'function', name: 'resolve', stateMutability: 'view', inputs: [{ name: 'name', type: 'bytes' }, { name: 'data', type: 'bytes' }], outputs: [{ name: '', type: 'bytes' }] },
+] as const;
+
+const REGISTRY_ABI = [
+  { type: 'function', name: 'chainId', stateMutability: 'view', inputs: [{ name: '_labelHash', type: 'bytes32' }], outputs: [{ name: '_chainId', type: 'bytes' }] },
+  { type: 'function', name: 'chainName', stateMutability: 'view', inputs: [{ name: '_chainIdBytes', type: 'bytes' }], outputs: [{ name: '_chainName', type: 'string' }] },
 ] as const;
 
 
@@ -26,12 +29,8 @@ const ChainResolverForm: React.FC = () => {
   const publicClient = usePublicClient();
   const [inputName, setInputName] = useState<string>('');
   const [isResolving, setIsResolving] = useState(false);
-  const [nodeHash, setNodeHash] = useState<string>('');
-  const [resolvedChainId, setResolvedChainId] = useState<string>('');
-  const [resolvedChainData, setResolvedChainData] = useState<any>(null);
-  const [caip2Identifier, setCaip2Identifier] = useState<string>('');
-  const [caip2Hash, setCaip2Hash] = useState<string>('');
-  const [chainDataExists, setChainDataExists] = useState<boolean | null>(null);
+  const [resolvedChainIdHex, setResolvedChainIdHex] = useState<string>('');
+  const [resolvedName, setResolvedName] = useState<string>('');
   const [showInlineLoading, setShowInlineLoading] = useState<boolean>(false);
 
   // Removed legacy copy helpers and sections for a leaner UI
@@ -65,35 +64,23 @@ const ChainResolverForm: React.FC = () => {
 
     try {
       // Clear old results and briefly hide to emphasize reload
-      setResolvedChainData(null);
-      setChainDataExists(null);
-      setCaip2Identifier('');
-      setCaip2Hash('');
-      setNodeHash('');
-      setResolvedChainId('');
+      setResolvedName('');
+      setResolvedChainIdHex('');
       setShowInlineLoading(true);
       setTimeout(() => setShowInlineLoading(false), 800);
 
       setIsResolving(true);
-      console.debug('[Resolver] computeNode(label)', { label: name });
-      const node = await (publicClient as any)!.readContract({
-        address: RESOLVER as `0x${string}`,
-        abi: CHAIN_RESOLVER_ABI as unknown as Abi,
-        functionName: 'computeNode',
-        args: [name]
-      }) as string;
-      console.debug('[Resolver] computeNode result', { node });
-      setNodeHash(node);
-      console.debug('[Resolver] nodeToChainId(node)');
-      const chainId = await (publicClient as any)!.readContract({
-        address: RESOLVER as `0x${string}`,
-        abi: CHAIN_RESOLVER_ABI as unknown as Abi,
-        functionName: 'nodeToChainId',
-        args: [node]
-      }) as string;
-      console.debug('[Resolver] nodeToChainId result', { chainId });
-      setResolvedChainId(chainId);
-      toast({ title: 'Resolved', description: 'Chain ID resolved via node mapping.' });
+      // Forward mapping via ChainRegistry: label -> chainId (bytes)
+      const labelHash = ethers.keccak256(ethers.toUtf8Bytes(name));
+      const chainIdBytes = await (publicClient as any)!.readContract({
+        address: (CHAIN_REGISTRY_ADDRESS as string) as `0x${string}`,
+        abi: REGISTRY_ABI as unknown as Abi,
+        functionName: 'chainId',
+        args: [labelHash]
+      }) as `0x${string}`;
+      const chainIdHex = chainIdBytes; // already 0x-prefixed bytes
+      setResolvedChainIdHex(chainIdHex);
+      toast({ title: 'Resolved', description: 'Chain ID resolved from registry.' });
 
       // Update URL so the state can be shared/bookmarked
       try {
@@ -104,39 +91,16 @@ const ChainResolverForm: React.FC = () => {
         window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
       } catch { }
 
-      // Fetch chain data from Sepolia registry
+      // Reverse resolve chainId -> chainName from registry
       try {
-        console.debug('[Resolver] registry.chainData for chainId', { chainId });
-        const { data, exists } = await fetchChainDataById(chainId);
-        console.debug('[Resolver] chainData (mapping getter)', data);
-        setChainDataExists(exists);
-        setResolvedChainData(data);
-        if (exists) {
-          const id = buildCaip2Identifier(data.chainNamespace, data.chainReference);
-          const hash = await computeCaip2HashOnChain(data.chainNamespace, data.chainReference);
-          setCaip2Identifier(id);
-          setCaip2Hash(hash);
-          console.debug('[Resolver] CAIP-2', { id, hash });
-        } else {
-          setCaip2Identifier('');
-          setCaip2Hash('');
-        }
-      } catch (regErr: any) {
-        console.error('[Resolver] chainDataFromId error', {
-          code: regErr?.code,
-          reason: regErr?.reason,
-          shortMessage: regErr?.shortMessage,
-          message: regErr?.message,
-          data: regErr?.data,
-          error: regErr,
-        });
-        if (regErr?.code === 'BAD_DATA' && (regErr?.value === '0x' || regErr?.info?.signature?.includes('chainData'))) {
-          setChainDataExists(false);
-          setResolvedChainData(null);
-        } else {
-          setChainDataExists(null);
-        }
-      }
+        const chainName = await (publicClient as any)!.readContract({
+          address: (CHAIN_REGISTRY_ADDRESS as string) as `0x${string}`,
+          abi: REGISTRY_ABI as unknown as Abi,
+          functionName: 'chainName',
+          args: [chainIdBytes]
+        }) as string;
+        setResolvedName(chainName);
+      } catch {}
     } catch (e: any) {
       console.error('[Resolver] resolution error', {
         code: e?.code,
@@ -205,51 +169,16 @@ const ChainResolverForm: React.FC = () => {
               </div>
             )}
 
-            {!isResolving && !showInlineLoading && resolvedChainId && (
+            {!isResolving && !showInlineLoading && resolvedChainIdHex && (
               <div className="mt-4 space-y-4">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
                   <span className="opacity-70">→</span>
-                  <code className="font-mono break-all">{resolvedChainId}</code>
+                  <code className="font-mono break-all">{resolvedChainIdHex}</code>
                 </div>
-
-                {!chainDataExists && chainDataExists !== null ? (
-                  <div className="text-sm text-muted-foreground">No chain data found for this chainId in the registry.</div>
-                ) : resolvedChainData ? (
-                  <div className="text-sm space-y-1 p-4 rounded-md border border-primary/10 bg-secondary/30">
-                    <div><strong>Name:</strong> {resolvedChainData.chainName}</div>
-                    <div><strong>Settlement Chain ID:</strong> {resolvedChainData.settlementChainId?.toString?.() ?? String(resolvedChainData.settlementChainId)}</div>
-                    <div><strong>Version:</strong> {resolvedChainData.version}</div>
-                    <div><strong>Rollup Contract:</strong> {resolvedChainData.rollupContract}</div>
-                    <div><strong>Namespace:</strong> {resolvedChainData.chainNamespace}</div>
-                    <div><strong>Reference:</strong> {resolvedChainData.chainReference}</div>
-                    <div><strong>Coin Type:</strong> {String(resolvedChainData.coinType)}</div>
-                    {(caip2Identifier && caip2Hash) && (
-                      <div className="pt-2 text-xs text-muted-foreground space-y-1">
-                        <div>
-                          CAIP-2: <code className="font-mono">{caip2Identifier}</code>
-                        </div>
-                        <div>
-                          Hash: <code className="font-mono">{caip2Hash}</code>
-                        </div>
-                      </div>
-                    )}
-                    <div className="pt-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => {
-                          try {
-                            navigator.clipboard.writeText(window.location.href);
-                            toast({ title: 'Link copied', description: 'URL copied to clipboard.' });
-                          } catch { }
-                        }}
-                      >
-                        Copy Link
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
+                {resolvedName && (
+                  <div className="text-sm text-muted-foreground">Name: <code className="font-mono">{resolvedName}</code></div>
+                )}
               </div>
             )}
           </CardContent>

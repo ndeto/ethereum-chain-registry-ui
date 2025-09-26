@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight, Database, Link2Icon } from 'lucide-react'
 import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS, REVERSE_RESOLVER_ADDRESS } from '@/lib/addresses'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 export default function LearnPage() {
   return (
@@ -31,42 +32,56 @@ export default function LearnPage() {
             <ArrowRight className="h-5 w-5 text-primary" />
             Overview
           </h2>
-          <p className="text-sm text-muted-foreground">Three contracts work together to provide forward and reverse lookups:</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
-              <div className="flex items-center gap-2 mb-1">
-                <Database className="h-4 w-4 text-primary" />
-                <strong>Registry (IChainRegistry)</strong>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Minimal read surface for resolution. Keys by <code className="font-mono">labelhash</code> (keccak256(bytes(label))).
-                Exposed reads:
-                <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                  <li><code className="font-mono">chainId(bytes32 labelHash)</code> → <code className="font-mono">bytes</code></li>
-                  <li><code className="font-mono">chainName(bytes chainIdBytes)</code> → <code className="font-mono">string</code></li>
-                </ul>
-              </div>
-            </div>
-            <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
-              <div className="flex items-center gap-2 mb-1">
-                <Link2Icon className="h-4 w-4 text-primary" />
-                <strong>Forward Resolver (ChainResolver)</strong>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Resolves a label’s node to its chain‑id via <code className="font-mono">resolve(bytes name, bytes data)</code> (ENSIP‑10).
-                Two paths: <code className="font-mono">text(node,"chain-id")</code> (hex string) and <code className="font-mono">data(node,bytes("chain-id"))</code> (raw bytes).
-              </div>
-            </div>
-            <div className="p-3 rounded-lg border border-primary/10 bg-secondary/30">
-              <div className="flex items-center gap-2 mb-1">
-                <Link2Icon className="h-4 w-4 text-primary" />
-                <strong>Reverse Resolver (ReverseChainResolver)</strong>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Resolves a chain‑id back to the chain name using <code className="font-mono">"chain-name:"</code> keys with <code className="font-mono">resolve</code>. Binary‑safe path: <code className="font-mono">data(node, abi.encode("chain-name:") || chainIdBytes)</code>.
-              </div>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">Three contracts work together to provide forward and reverse lookups. Expand a section to learn more.</p>
+          <Card className="border border-primary/10 bg-background/50 shadow-none">
+            <CardContent className="p-0">
+              <Accordion type="single" collapsible className="divide-y divide-primary/10">
+                <AccordionItem value="registry">
+                  <AccordionTrigger className="px-4 py-3 text-left">
+                    <div className="flex items-center gap-2"><Database className="h-4 w-4 text-primary" /> Registry (IChainRegistry)</div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <p>Minimal read surface keyed by <code className="font-mono">labelhash</code> (keccak256(bytes(label))).</p>
+                      <ul className="list-disc pl-5 space-y-0.5">
+                        <li><code className="font-mono">chainId(bytes32 labelHash)</code> → <code className="font-mono">bytes</code></li>
+                        <li><code className="font-mono">chainName(bytes chainIdBytes)</code> → <code className="font-mono">string</code></li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="forward">
+                  <AccordionTrigger className="px-4 py-3 text-left">
+                    <div className="flex items-center gap-2"><Link2Icon className="h-4 w-4 text-primary" /> Forward Resolver (ChainResolver)</div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <p>Reads via <code className="font-mono">resolve(bytes name, bytes data)</code> (ENSIP‑10) to resolve a label’s node to its chain‑id.</p>
+                      <ul className="list-disc pl-5 space-y-0.5">
+                        <li>Text path: <code className="font-mono">text(node, "chain-id")</code> → hex string (sans 0x)</li>
+                        <li>Data path: <code className="font-mono">data(node, bytes("chain-id"))</code> → raw bytes</li>
+                      </ul>
+                      <p>“chain‑id” is always sourced from the Registry (stored values are overridden on read).</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="reverse">
+                  <AccordionTrigger className="px-4 py-3 text-left">
+                    <div className="flex items-center gap-2"><Link2Icon className="h-4 w-4 text-primary" /> Reverse Resolver (ReverseChainResolver)</div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <p>Reads via <code className="font-mono">resolve</code> with <code className="font-mono">"chain-name:"</code> keys to map a chain‑id back to its name.</p>
+                      <ul className="list-disc pl-5 space-y-0.5">
+                        <li>Text path: <code className="font-mono">"chain-name:" + ascii(chainIdString)</code></li>
+                        <li>Data path (binary‑safe): <code className="font-mono">abi.encode("chain-name:") || chainIdBytes</code></li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
         </section>
 
 
@@ -129,12 +144,7 @@ export default function LearnPage() {
           </CardHeader>
           <CardContent>
             <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-              <li>
-                ERC‑7785 Proposal — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ethereum/ERCs/blob/master/ERCS/erc-7785.md">Spec</a>
-              </li>
-              <li>
-                Modified ERC‑7785 Proposal. This registry is based on this <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/1ecc8b7195af98804c45f2c8c669571e11f288b5/ERCS/erc-7785.md">Spec</a> — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/pull/1">Pull Request</a>
-              </li>
+              {/* ERC‑7785 references removed in this demo */}
               <li>
                 EIP‑155 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-155">Settlement chain IDs</a>
               </li>

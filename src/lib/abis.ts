@@ -221,13 +221,16 @@ export const CHAIN_REGISTRY_ABI = [
 export const CHAIN_RESOLVER_ABI = [
   {
     inputs: [
-      { internalType: "address", name: "_chainRegistry", type: "address" },
+      { internalType: "address", name: "_chainIDRegistry", type: "address" },
     ],
     stateMutability: "nonpayable",
     type: "constructor",
   },
-  { inputs: [], name: "ChainNameEmpty", type: "error" },
-  { inputs: [], name: "LabelAlreadyAssigned", type: "error" },
+  {
+    inputs: [{ internalType: "bytes", name: "dns", type: "bytes" }],
+    name: "DNSDecodingFailed",
+    type: "error",
+  },
   {
     inputs: [{ internalType: "address", name: "owner", type: "address" }],
     name: "OwnableInvalidOwner",
@@ -237,30 +240,6 @@ export const CHAIN_RESOLVER_ABI = [
     inputs: [{ internalType: "address", name: "account", type: "address" }],
     name: "OwnableUnauthorizedAccount",
     type: "error",
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "value", type: "uint256" },
-      { internalType: "uint256", name: "length", type: "uint256" },
-    ],
-    name: "StringsInsufficientHexLength",
-    type: "error",
-  },
-  { inputs: [], name: "UnsupportedFunction", type: "error" },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "bytes32", name: "node", type: "bytes32" },
-      { indexed: true, internalType: "string", name: "label", type: "string" },
-      {
-        indexed: true,
-        internalType: "bytes32",
-        name: "chainId",
-        type: "bytes32",
-      },
-    ],
-    name: "NodeAssigned",
-    type: "event",
   },
   {
     anonymous: false,
@@ -283,7 +262,70 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [],
-    name: "CHAIN_REGISTRY",
+    name: "ADDR_COINTYPE_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "ADDR_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "BASE_NODE",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "CHAIN_ID_DATA_KEY",
+    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "CHAIN_ID_TEXT_KEY",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "CONTENTHASH_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "DATA_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "ETHEREUM_COIN_TYPE",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "TEXT_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "chainIDRegistry",
     outputs: [
       { internalType: "contract IChainRegistry", name: "", type: "address" },
     ],
@@ -292,35 +334,55 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "string", name: "label", type: "string" },
-      { internalType: "bytes32", name: "chainId", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "uint256", name: "_coinType", type: "uint256" },
     ],
-    name: "assign",
-    outputs: [],
-    stateMutability: "nonpayable",
+    name: "getAddr",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
     type: "function",
   },
   {
-    inputs: [{ internalType: "string", name: "chainName", type: "string" }],
-    name: "computeNode",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-    stateMutability: "pure",
+    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
+    name: "getContenthash",
+    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
+    stateMutability: "view",
     type: "function",
   },
   {
     inputs: [
-      { internalType: "string", name: "label", type: "string" },
-      { internalType: "bytes32", name: "chainId", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes", name: "_key", type: "bytes" },
     ],
-    name: "demoAssign",
-    outputs: [],
-    stateMutability: "nonpayable",
+    name: "getData",
+    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
+    stateMutability: "view",
     type: "function",
   },
   {
-    inputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-    name: "nodeToChainId",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
+    name: "getOwner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "string", name: "_key", type: "string" },
+    ],
+    name: "getText",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "_owner", type: "address" },
+      { internalType: "address", name: "_operator", type: "address" },
+    ],
+    name: "isOperator",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
   },
@@ -329,6 +391,16 @@ export const CHAIN_RESOLVER_ABI = [
     name: "owner",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "address", name: "_owner", type: "address" },
+    ],
+    name: "register",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -349,6 +421,59 @@ export const CHAIN_RESOLVER_ABI = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "uint256", name: "_coinType", type: "uint256" },
+      { internalType: "address", name: "_addr", type: "address" },
+    ],
+    name: "setAddr",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes", name: "_hash", type: "bytes" },
+    ],
+    name: "setContenthash",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes", name: "_key", type: "bytes" },
+      { internalType: "bytes", name: "_data", type: "bytes" },
+    ],
+    name: "setData",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "_operator", type: "address" },
+      { internalType: "bool", name: "_authorized", type: "bool" },
+    ],
+    name: "setOperator",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "string", name: "_key", type: "string" },
+      { internalType: "string", name: "_value", type: "string" },
+    ],
+    name: "setText",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
     name: "supportsInterface",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
@@ -362,16 +487,88 @@ export const CHAIN_RESOLVER_ABI = [
     stateMutability: "nonpayable",
     type: "function",
   },
-] as const;
-
-export const CAIP2_LIB_ABI = [
   {
     inputs: [
-      { internalType: "string", name: "namespace", type: "string" },
-      { internalType: "string", name: "chainReference", type: "string" },
+      { internalType: "address", name: "_chainIDRegistry", type: "address" },
     ],
-    name: "computeCaip2Hash",
+    name: "updateChainIDRegistry",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
+
+export const REVERSE_CHAIN_RESOLVER_ABI = [
+  {
+    inputs: [
+      { internalType: "address", name: "_chainRegistry", type: "address" },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [{ internalType: "bytes", name: "dns", type: "bytes" }],
+    name: "DNSDecodingFailed",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "BASE_NODE",
     outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "CHAIN_NAME_DATA_PREFIX",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "CHAIN_NAME_TEXT_PREFIX",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "DATA_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "TEXT_SELECTOR",
+    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "chainRegistry",
+    outputs: [
+      { internalType: "contract IChainRegistry", name: "", type: "address" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes", name: "name", type: "bytes" },
+      { internalType: "bytes", name: "data", type: "bytes" },
+    ],
+    name: "resolve",
+    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
+    name: "supportsInterface",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "pure",
     type: "function",
   },

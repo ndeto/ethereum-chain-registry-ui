@@ -27,7 +27,8 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        // Use card surface to increase contrast against background in dark themes
+        default: "border bg-card text-card-foreground",
         destructive: "destructive group border-destructive bg-destructive text-destructive-foreground",
       },
     },

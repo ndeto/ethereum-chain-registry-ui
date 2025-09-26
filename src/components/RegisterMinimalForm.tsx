@@ -11,6 +11,7 @@ import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses'
 import { useAccount, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi';
 import type { Abi } from 'viem';
 import { keccak256, toUtf8Bytes } from 'ethers';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const TARGET_CHAIN_ID = 11155111; // Sepolia
 
@@ -24,6 +25,7 @@ const RegisterMinimalForm: React.FC = () => {
   const [label, setLabel] = useState<string>('');
   const [chainIdHex, setChainIdHex] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<{ label: string; chainId: string } | null>(null);
 
   const validAddr = (x?: string) => !!x && /^0x[a-fA-F0-9]{40}$/.test(x) && x !== '0x0000000000000000000000000000000000000000';
   const validBytes32 = (x: string) => /^0x[0-9a-fA-F]{64}$/.test(x);
@@ -55,6 +57,9 @@ const RegisterMinimalForm: React.FC = () => {
       // Optional network hint
       try { await switchChain({ chainId: TARGET_CHAIN_ID }); } catch {}
 
+      // Heads-up toast: two transactions
+      toast({ title: 'Action Required', description: 'You will sign 2 transactions: (1) Registry.register, (2) Resolver.register.' });
+
       // 1) Registry.register(name, owner=account, chainId=bytes32)
       const tx1 = await writeContractAsync({
         address: registry,
@@ -78,6 +83,7 @@ const RegisterMinimalForm: React.FC = () => {
       await publicClient!.waitForTransactionReceipt({ hash: tx2 });
       toast({ title: 'Resolver: Confirmed', description: 'Label registered with resolver.' });
 
+      setResult({ label: name, chainId: cid });
       setLabel('');
       setChainIdHex('');
     } catch (e: any) {
@@ -92,7 +98,9 @@ const RegisterMinimalForm: React.FC = () => {
     <Card className="border border-primary/10 bg-background/50 shadow-none">
       <CardHeader>
         <CardTitle>Register (Minimal)</CardTitle>
-        <CardDescription>Owner is the connected wallet. Chain ID must be bytes32 hex.</CardDescription>
+        <CardDescription>
+          Owner is the connected wallet. Chain ID must be bytes32 hex. This flow will prompt for two signatures: Registry then Resolver.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4">
@@ -110,10 +118,27 @@ const RegisterMinimalForm: React.FC = () => {
         <div className="flex gap-2">
           <Button onClick={onSubmit} disabled={submitting || switching} className="w-full">{submitting ? 'Submitting…' : 'Register'}</Button>
         </div>
+
+        {/* Result mapping */}
+        {submitting ? (
+          <div className="mt-4 p-4 rounded-md border border-primary/10 bg-secondary/30">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-2/3 bg-muted/60" />
+              <Skeleton className="h-3 w-1/2 bg-muted/50" />
+            </div>
+          </div>
+        ) : result ? (
+          <div className="mt-4 p-4 rounded-md border border-primary/10 bg-secondary/30 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <code className="font-mono">{result.label}.cid.eth</code>
+              <span className="opacity-70">→</span>
+              <code className="font-mono break-all">{result.chainId}</code>
+            </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
 };
 
 export default RegisterMinimalForm;
-

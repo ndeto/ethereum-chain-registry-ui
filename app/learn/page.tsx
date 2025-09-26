@@ -8,10 +8,10 @@ export default function LearnPage() {
       <div className="mx-auto max-w-6xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-primary">On-chain Registry — Reference Hub</h1>
+          <h1 className="text-4xl font-bold text-primary">Ethereum Chain Registry — Reference Hub</h1>
           <p className="text-foreground/90 text-s leading-relaxed">
             This app demos an on-chain registry for mapping a short label (like <code className="font-mono">base</code>)
-            to a 32 byte chain identifier and back again. It uses a Registry for storage and two ENSIP‑10 resolvers for reads.
+            to an ERC‑7930 chain identifier and back again. It uses a Registry for storage and two ENSIP‑10 resolvers for reads.
           </p>
         </div>
 
@@ -40,7 +40,7 @@ export default function LearnPage() {
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" /> Registry (ChainRegistry.sol)
+                Registry (ChainRegistry.sol)
               </CardTitle>
               <CardDescription>Stores chain IDs and label mappings keyed by labelhash.</CardDescription>
             </CardHeader>
@@ -63,7 +63,7 @@ export default function LearnPage() {
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Link2Icon className="h-5 w-5 text-primary" /> Forward Resolver (ChainResolver.sol)
+                Forward Resolver (ChainResolver.sol)
               </CardTitle>
               <CardDescription>ENSIP‑10 wildcard resolver for forward lookups.</CardDescription>
             </CardHeader>
@@ -103,7 +103,7 @@ export default function LearnPage() {
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Link2Icon className="h-5 w-5 text-primary" /> Reverse Resolver (ReverseChainResolver.sol)
+                Reverse Resolver (ReverseChainResolver.sol)
               </CardTitle>
               <CardDescription>ENSIP‑10 wildcard resolver for reverse lookups.</CardDescription>
             </CardHeader>
@@ -122,7 +122,7 @@ export default function LearnPage() {
                   <a className="underline ml-1" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑17</a>
                 </li>
               </ul>
-              <p className="opacity-80">Use the data path for arbitrary 32‑byte ids; the text path expects a UTF‑8 string.</p>
+              <p className="opacity-80">Use the data path for arbitrary‑length identifier bytes; the text path expects a hex string.</p>
               <p>Reverse resolution flow:</p>
               <div className="w-full overflow-hidden rounded-lg border border-primary/10 bg-muted/10 flex justify-center">
                 <img

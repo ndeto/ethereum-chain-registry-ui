@@ -15,9 +15,9 @@ if (!projectId) {
 
 // Set up metadata
 const metadata = {
-  name: 'appkit-example',
-  description: 'AppKit Example',
-  url: 'https://erc-7785-demo-ui.vercel.app/',
+  name: 'Ethereum Chain Registry',
+  description: 'Demo dapp for the Chain ID Registry',
+  url: 'https://example.com/',
   icons: ['https://avatars.githubusercontent.com/u/179229932']
 }
 

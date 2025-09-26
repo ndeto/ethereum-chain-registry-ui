@@ -1,5 +1,5 @@
 {
-  "name": "erc-7785-registry-demo",
+  "name": "ethereum-chain-id-registry-demo",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "next": "^14.2.15",
-    "@reown/appkit": "^1.8.5",
-    "@reown/appkit-adapter-wagmi": "^1.8.5",
+    "@reown/appkit": "^1.8.7",
+    "@reown/appkit-adapter-wagmi": "^1.8.7",
     "wagmi": "^2.16.9",
     "@wagmi/core": "^2.20.3",
     "viem": "^2.37.6",

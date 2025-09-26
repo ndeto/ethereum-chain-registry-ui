@@ -1,6 +1,5 @@
 import RegisterExplainer from '@/components/RegisterExplainer';
 import RegisterMinimalForm from '@/components/RegisterMinimalForm';
-import RegisterPostDemo from '@/components/RegisterPostDemo';
 
 export default function Page() {
   return (
@@ -8,7 +7,7 @@ export default function Page() {
       <div className="mx-auto max-w-3xl space-y-8">
         <RegisterExplainer />
         <RegisterMinimalForm />
-        <RegisterPostDemo />
+        {/* Resolve CTA removed */}
       </div>
     </main>
   );

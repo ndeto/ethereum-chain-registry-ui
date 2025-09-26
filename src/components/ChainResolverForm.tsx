@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,12 +34,9 @@ const ChainResolverForm: React.FC = () => {
     try {
       const params = new URLSearchParams(window.location.search);
       const qLabel = params.get('label');
-      const auto = params.get('auto');
       if (qLabel) {
         setInputName(qLabel.toLowerCase());
-        if (auto && auto !== '0' && auto !== 'false') {
-          void handleResolve(qLabel);
-        }
+        // Do not auto-resolve; let the user click the button
       }
     } catch { }
   }, []);
@@ -82,14 +80,7 @@ const ChainResolverForm: React.FC = () => {
       setResolvedChainIdHex(chainIdHex);
       toast({ title: 'Resolved', description: 'Chain ID resolved via resolver.' });
 
-      // Update URL so the state can be shared/bookmarked
-      try {
-        const params = new URLSearchParams(window.location.search);
-        params.set('label', name);
-        params.set('auto', '1');
-        params.set('chainId', chainIdHex);
-        window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
-      } catch { }
+      // Do not mutate URL; params are only used when arriving from Register
 
       // Reverse mapping via ReverseResolver: data(bytes32,bytes) with key = abi.encode("chain-name:") || chainIdBytes
       try {
@@ -134,7 +125,7 @@ const ChainResolverForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold text-primary">Resolve Chain Name</h1>
@@ -203,11 +194,18 @@ const ChainResolverForm: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
                   <span className="opacity-70">→</span>
-                  <code className="font-mono break-all">{resolvedChainIdHex}</code>
+                  <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}`} className="underline">
+                    <code className="font-mono break-all">{resolvedChainIdHex}</code>
+                  </Link>
                 </div>
                 {resolvedName && (
                   <div className="text-sm text-muted-foreground">Name: <code className="font-mono">{resolvedName}</code></div>
                 )}
+                <div className="pt-1">
+                  <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}`} className="inline-block">
+                    <Button variant="secondary">Reverse Resolve</Button>
+                  </Link>
+                </div>
               </div>
             )}
           </CardContent>

@@ -17,6 +17,7 @@ export default function ZincNav() {
   const navLinks = [
     { href: '/register', label: 'Register' },
     { href: '/resolve', label: 'Resolve' },
+    { href: '/reverse', label: 'Reverse' },
     { href: '/learn', label: 'Learn' },
   ];
 
@@ -33,7 +34,7 @@ export default function ZincNav() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-zinc-100">
-            <span>ERC‑7785</span>
+            <span>Ethereum Chain Registry</span>
           </Link>
           <nav className="hidden items-center gap-4 text-sm md:flex">
             {navLinks.map((l) => (

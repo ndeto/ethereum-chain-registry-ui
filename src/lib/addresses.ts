@@ -1,5 +1,5 @@
 // Addresses are provided via env. Defaults live in .env.example.
-// Deploy scripts: https://github.com/unruggable-labs/erc-7785-registry/tree/57e9aa2fab7f2c9b5efbb27ad3f56b61f68fa2e3/deploy
+// Deploy scripts: https://github.com/unruggable-labs/chain-registry
 
 const _REG = process.env.NEXT_PUBLIC_CHAIN_REGISTRY_ADDRESS;
 const _RES = process.env.NEXT_PUBLIC_CHAIN_RESOLVER_ADDRESS;

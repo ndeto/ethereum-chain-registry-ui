@@ -1,7 +1,7 @@
 export const metadata = {
-  title: 'ERC‑7785 Registry Demo — Register, Assign, Resolve (CAIP‑2)',
+  title: 'Ethereum Chain Registry — Register, Assign, Resolve',
   description:
-    'Demo UI for the ERC‑7785 Chain Registry and Resolver. Register ChainData, assign human labels, resolve to chain IDs, and inspect CAIP‑2 identifiers and hashes.',
+    'Demo UI for the Chain ID Registry and Resolver. Register ChainData, assign human labels, resolve to chain IDs.',
 };
 
 import '@/index.css';
@@ -21,4 +21,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

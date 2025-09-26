@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,7 @@ const RegisterMinimalForm: React.FC = () => {
           toast({
             variant: 'destructive',
             title: 'Label Already Registered',
-            description: `Labels must be unique. Confirm on Resolve: /resolve?label=${name}&auto=1`,
+            description: `Labels must be unique.`,
           });
           return;
         }
@@ -121,16 +122,9 @@ const RegisterMinimalForm: React.FC = () => {
       setResStatus('confirmed');
 
       setResult({ label: name, chainId: cid });
-      // Persist state so the next step (Resolve) can pick it up
+      // Persist only for this tab so CTA appears after a successful register
       try {
-        // Update current URL with query params
-        const params = new URLSearchParams(window.location.search);
-        params.set('label', name);
-        params.set('chainId', cid);
-        window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
-        // Local fallback
-        localStorage.setItem('lastRegisteredLabel', name);
-        localStorage.setItem('lastRegisteredChainId', cid);
+        sessionStorage.setItem('justRegisteredLabel', name);
       } catch {}
       setLabel('');
       setChainIdHex('');
@@ -190,18 +184,20 @@ const RegisterMinimalForm: React.FC = () => {
                 {regStatus === 'confirmed' ? 'Confirmed' : regStatus === 'pending' ? 'Submitting' : regStatus === 'error' ? 'Failed' : ''}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={
-                resStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
-                  resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
-                    resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
-                      'inline-block h-2.5 w-2.5 rounded-full bg-muted'
-              } />
-              <span>Assign on Resolver</span>
-              <span className="ml-auto text-xs opacity-70">
-                {resStatus === 'confirmed' ? 'Confirmed' : resStatus === 'pending' ? 'Submitting' : resStatus === 'error' ? 'Failed' : ''}
-              </span>
-            </div>
+            {(regStatus === 'confirmed' || resStatus !== 'idle') && (
+              <div className="flex items-center gap-2">
+                <span className={
+                  resStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
+                    resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
+                      resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                        'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+                } />
+                <span>Assign on Resolver</span>
+                <span className="ml-auto text-xs opacity-70">
+                  {resStatus === 'confirmed' ? 'Confirmed' : resStatus === 'pending' ? 'Submitting' : resStatus === 'error' ? 'Failed' : ''}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -219,6 +215,11 @@ const RegisterMinimalForm: React.FC = () => {
               <code className="font-mono">{result.label}.cid.eth</code>
               <span className="opacity-70">→</span>
               <code className="font-mono break-all">{result.chainId}</code>
+            </div>
+            <div className="mt-3">
+              <Link href={`/resolve?label=${encodeURIComponent(result.label)}`} className="inline-block">
+                <Button variant="secondary">Go to Resolve</Button>
+              </Link>
             </div>
           </div>
         ) : null}

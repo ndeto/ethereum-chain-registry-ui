@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /*
-  Resolve an ERC-7785 chainId via ChainResolver.resolve(bytes,bytes)
+  Resolve a chain ID via ChainResolver.resolve(bytes,bytes)
   - Loads config from .env.local (NEXT_PUBLIC_CHAIN_RESOLVER_ADDRESS, NEXT_PUBLIC_SEPOLIA_RPC_URLS)
   - Computes ENS namehash for '<label>.cid.eth' offline
   - Encodes text(bytes32,string) with key 'chain-id'

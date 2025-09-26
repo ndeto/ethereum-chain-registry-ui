@@ -1,7 +1,6 @@
 export const metadata = {
-  title: 'On-chain Registry Demo',
-  description:
-    'Demo UI for the ENS based on-chain registry.',
+  title: 'Ethereum Chain Registry',
+  description: 'Demo UI for the Ethereum Chain Registry.',
 };
 
 import '@/index.css';

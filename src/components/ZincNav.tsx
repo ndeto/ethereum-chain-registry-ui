@@ -17,7 +17,6 @@ export default function ZincNav() {
   const navLinks = [
     { href: '/register', label: 'Register' },
     { href: '/resolve', label: 'Resolve' },
-    { href: '/caip2', label: 'CAIP‑2' },
     { href: '/learn', label: 'Learn' },
   ];
 

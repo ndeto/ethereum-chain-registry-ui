@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight, Database, Link2Icon } from 'lucide-react'
-import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS, CAIP2_CONTRACT_ADDRESS } from '@/lib/addresses'
+import { CHAIN_REGISTRY_ADDRESS, CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses'
 
 export default function LearnPage() {
   return (
@@ -169,17 +169,7 @@ export default function LearnPage() {
                   {CHAIN_RESOLVER_ADDRESS}
                 </a>
               </div>
-              <div className="flex items-center gap-2">
-                <strong>CAIP‑2 Lib:</strong>
-                <a
-                  href={`https://sepolia.etherscan.io/address/${CAIP2_CONTRACT_ADDRESS}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline break-all"
-                >
-                  {CAIP2_CONTRACT_ADDRESS}
-                </a>
-              </div>
+              {/* CAIP-2 removed in this demo */}
             </div>
           </CardContent>
         </Card>
@@ -205,9 +195,7 @@ export default function LearnPage() {
               <li>
                 EIP‑155 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-155">Settlement chain IDs</a>
               </li>
-              <li>
-                CAIP‑2 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-2.md">Chain namespace and reference</a>
-              </li>
+              {/* CAIP‑2 removed */}
               <li>
                 ERC‑7930 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">Chain‑aware addresses</a>
               </li>

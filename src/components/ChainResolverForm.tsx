@@ -67,7 +67,7 @@ const ChainResolverForm: React.FC = () => {
       setIsResolving(true);
       // Forward mapping via ENSIP-10: resolver.resolve(dnsEncode, encode(text(node,"chain-id")))
       const labelHash = keccak256(toUtf8Bytes(name));
-      const textIface = new Interface([ 'function text(bytes32,string) view returns (string)' ]);
+      const textIface = new Interface(['function text(bytes32,string) view returns (string)']);
       const callData = textIface.encodeFunctionData('text', [labelHash, 'chain-id']);
       const dnsName = dnsEncode(`${name}.cid.eth`, 255);
       const chainIdAnswer = await (publicClient as any)!.readContract({
@@ -96,7 +96,7 @@ const ChainResolverForm: React.FC = () => {
         if (reverseAddr && /^0x[a-fA-F0-9]{40}$/.test(reverseAddr) && reverseAddr !== '0x0000000000000000000000000000000000000000') {
           const prefix = AbiCoder.defaultAbiCoder().encode(['string'], ['chain-name:']);
           const keyBytes = hexlify(new Uint8Array([...getBytes(prefix), ...getBytes(chainIdHex)]));
-          const dataIface = new Interface([ 'function data(bytes32,bytes) view returns (bytes)' ]);
+          const dataIface = new Interface(['function data(bytes32,bytes) view returns (bytes)']);
           const call = dataIface.encodeFunctionData('data', ['0x' + '00'.repeat(32), keyBytes]);
           const revAns = await (publicClient as any)!.readContract({
             address: reverseAddr as `0x${string}`,
@@ -114,7 +114,7 @@ const ChainResolverForm: React.FC = () => {
           }
           setResolvedName(nameOut);
         }
-      } catch {}
+      } catch { }
     } catch (e: any) {
       console.error('[Resolver] resolution error', {
         code: e?.code,
@@ -136,7 +136,7 @@ const ChainResolverForm: React.FC = () => {
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="text-center space-y-3">
           <h1 className="text-4xl font-bold text-primary">Resolve Chain Name</h1>
-          <p className="text-foreground/90 text-md leading-relaxed">Enter a chain reference (e.g., base) to resolve its ERC-7785 chain ID.</p>
+          <p className="text-foreground/90 text-md leading-relaxed">Enter a chain reference (e.g., base) to resolve its chain ID.</p>
         </div>
 
         {/* Legacy quick-picks removed */}

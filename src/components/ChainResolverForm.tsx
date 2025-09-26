@@ -8,19 +8,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import { type Abi } from 'viem';
-import { ethers } from 'ethers';
-import { CHAIN_RESOLVER_ADDRESS, CHAIN_REGISTRY_ADDRESS } from '@/lib/addresses';
+import { ethers, Interface, dnsEncode, keccak256, toUtf8Bytes, AbiCoder, getBytes, hexlify } from 'ethers';
+import { CHAIN_RESOLVER_ADDRESS, REVERSE_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { Loader2, Search } from 'lucide-react';
 const RESOLVER = CHAIN_RESOLVER_ADDRESS as string;
 
-// ENSIP-10 resolve() surface and registry reads
+// ENSIP-10 resolve() surface
 const CHAIN_RESOLVER_ABI = [
   { type: 'function', name: 'resolve', stateMutability: 'view', inputs: [{ name: 'name', type: 'bytes' }, { name: 'data', type: 'bytes' }], outputs: [{ name: '', type: 'bytes' }] },
-] as const;
-
-const REGISTRY_ABI = [
-  { type: 'function', name: 'chainId', stateMutability: 'view', inputs: [{ name: '_labelHash', type: 'bytes32' }], outputs: [{ name: '_chainId', type: 'bytes' }] },
-  { type: 'function', name: 'chainName', stateMutability: 'view', inputs: [{ name: '_chainIdBytes', type: 'bytes' }], outputs: [{ name: '_chainName', type: 'string' }] },
 ] as const;
 
 
@@ -70,17 +65,21 @@ const ChainResolverForm: React.FC = () => {
       setTimeout(() => setShowInlineLoading(false), 800);
 
       setIsResolving(true);
-      // Forward mapping via ChainRegistry: label -> chainId (bytes)
-      const labelHash = ethers.keccak256(ethers.toUtf8Bytes(name));
-      const chainIdBytes = await (publicClient as any)!.readContract({
-        address: (CHAIN_REGISTRY_ADDRESS as string) as `0x${string}`,
-        abi: REGISTRY_ABI as unknown as Abi,
-        functionName: 'chainId',
-        args: [labelHash]
+      // Forward mapping via ENSIP-10: resolver.resolve(dnsEncode, encode(text(node,"chain-id")))
+      const labelHash = keccak256(toUtf8Bytes(name));
+      const textIface = new Interface([ 'function text(bytes32,string) view returns (string)' ]);
+      const callData = textIface.encodeFunctionData('text', [labelHash, 'chain-id']);
+      const dnsName = dnsEncode(`${name}.cid.eth`, 255);
+      const chainIdAnswer = await (publicClient as any)!.readContract({
+        address: RESOLVER as `0x${string}`,
+        abi: CHAIN_RESOLVER_ABI as unknown as Abi,
+        functionName: 'resolve',
+        args: [dnsName as unknown as `0x${string}`, callData as `0x${string}`]
       }) as `0x${string}`;
-      const chainIdHex = chainIdBytes; // already 0x-prefixed bytes
+      const [hexNo0x] = textIface.decodeFunctionResult('text', chainIdAnswer) as [string];
+      const chainIdHex = `0x${hexNo0x}`;
       setResolvedChainIdHex(chainIdHex);
-      toast({ title: 'Resolved', description: 'Chain ID resolved from registry.' });
+      toast({ title: 'Resolved', description: 'Chain ID resolved via resolver.' });
 
       // Update URL so the state can be shared/bookmarked
       try {
@@ -91,15 +90,30 @@ const ChainResolverForm: React.FC = () => {
         window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
       } catch { }
 
-      // Reverse resolve chainId -> chainName from registry
+      // Reverse mapping via ReverseResolver: data(bytes32,bytes) with key = abi.encode("chain-name:") || chainIdBytes
       try {
-        const chainName = await (publicClient as any)!.readContract({
-          address: (CHAIN_REGISTRY_ADDRESS as string) as `0x${string}`,
-          abi: REGISTRY_ABI as unknown as Abi,
-          functionName: 'chainName',
-          args: [chainIdBytes]
-        }) as string;
-        setResolvedName(chainName);
+        const reverseAddr = REVERSE_RESOLVER_ADDRESS as string;
+        if (reverseAddr && /^0x[a-fA-F0-9]{40}$/.test(reverseAddr) && reverseAddr !== '0x0000000000000000000000000000000000000000') {
+          const prefix = AbiCoder.defaultAbiCoder().encode(['string'], ['chain-name:']);
+          const keyBytes = hexlify(new Uint8Array([...getBytes(prefix), ...getBytes(chainIdHex)]));
+          const dataIface = new Interface([ 'function data(bytes32,bytes) view returns (bytes)' ]);
+          const call = dataIface.encodeFunctionData('data', ['0x' + '00'.repeat(32), keyBytes]);
+          const revAns = await (publicClient as any)!.readContract({
+            address: reverseAddr as `0x${string}`,
+            abi: CHAIN_RESOLVER_ABI as unknown as Abi,
+            functionName: 'resolve',
+            args: ['0x00' as `0x${string}`, call as `0x${string}`]
+          }) as `0x${string}`;
+          const [encoded] = new Interface(['function data(bytes32,bytes) view returns (bytes)']).decodeFunctionResult('data', revAns) as [`0x${string}`];
+          let nameOut = '';
+          try {
+            [nameOut] = AbiCoder.defaultAbiCoder().decode(['string'], encoded) as [string];
+          } catch {
+            const hex = (encoded as string).replace(/^0x/, '');
+            nameOut = Buffer.from(hex, 'hex').toString('utf8');
+          }
+          setResolvedName(nameOut);
+        }
       } catch {}
     } catch (e: any) {
       console.error('[Resolver] resolution error', {

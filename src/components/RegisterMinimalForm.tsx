@@ -32,7 +32,8 @@ const RegisterMinimalForm: React.FC = () => {
   const [resStatus, setResStatus] = useState<StepStatus>('idle');
 
   const validAddr = (x?: string) => !!x && /^0x[a-fA-F0-9]{40}$/.test(x) && x !== '0x0000000000000000000000000000000000000000';
-  const validBytes32 = (x: string) => /^0x[0-9a-fA-F]{64}$/.test(x);
+  // ERC‑7930 identifiers are variable-length bytes. Accept 1–64 bytes (2–128 hex chars) with 0x prefix.
+  const validHexBytes = (x: string) => /^0x(?:[0-9a-fA-F]{2}){1,64}$/.test(x);
 
   const onSubmit = async () => {
     const registry = CHAIN_REGISTRY_ADDRESS as `0x${string}`;
@@ -47,8 +48,12 @@ const RegisterMinimalForm: React.FC = () => {
       toast({ variant: 'destructive', title: 'Invalid Label', description: 'Enter a non-empty label (e.g., base).' });
       return;
     }
-    if (!validBytes32(cid)) {
-      toast({ variant: 'destructive', title: 'Invalid Chain ID', description: 'Chain ID must be 0x + 64 hex (bytes32).' });
+    if (!validHexBytes(cid)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Chain Identifier',
+        description: 'Provide 0x-prefixed hex bytes (even-length), up to 64 bytes.',
+      });
       return;
     }
     if (!account) {
@@ -153,9 +158,9 @@ const RegisterMinimalForm: React.FC = () => {
             <div className="text-xs text-muted-foreground">Full name will be <code className="font-mono">{(label || '<label>')}.cid.eth</code></div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cid">Chain ID (bytes32)</Label>
-            <Input id="cid" placeholder="0x…64 hex…" value={chainIdHex} onChange={(e) => setChainIdHex(e.target.value)} />
-            <div className="text-xs text-muted-foreground">Example: <code className="font-mono">0x2121…(64 hex)…</code></div>
+            <Label htmlFor="cid">Chain Identifier (hex bytes)</Label>
+            <Input id="cid" placeholder="0x…" value={chainIdHex} onChange={(e) => setChainIdHex(e.target.value)} />
+            <div className="text-xs text-muted-foreground">Example: <code className="font-mono">0x01</code>, <code className="font-mono">0xa4b1</code>, or longer (up to 64 bytes)</div>
           </div>
         </div>
         <div className="flex gap-2">

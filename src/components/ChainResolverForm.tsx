@@ -201,10 +201,13 @@ const ChainResolverForm: React.FC = () => {
                 {resolvedName && (
                   <div className="text-sm text-muted-foreground">Name: <code className="font-mono">{resolvedName}</code></div>
                 )}
-                <div className="pt-1">
+                <div className="pt-1 space-y-1">
                   <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}`} className="inline-block">
                     <Button variant="secondary">Reverse Resolve</Button>
                   </Link>
+                  <div className="text-xs text-muted-foreground">
+                    Opens the Reverse page to look up the human‑readable label from this chain identifier.
+                  </div>
                 </div>
               </div>
             )}

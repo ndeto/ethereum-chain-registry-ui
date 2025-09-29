@@ -13,6 +13,7 @@ import { useAccount, usePublicClient, useSwitchChain, useWriteContract } from 'w
 import type { Abi } from 'viem';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2 } from 'lucide-react';
 
 const TARGET_CHAIN_ID = 11155111; // Sepolia
 
@@ -33,6 +34,23 @@ const RegisterMinimalForm: React.FC = () => {
   const [showSteps, setShowSteps] = useState(false);
   const [regSubmitting, setRegSubmitting] = useState(false);
   const [resSubmitting, setResSubmitting] = useState(false);
+  const [inputsLocked, setInputsLocked] = useState(false);
+  const [regTxHash, setRegTxHash] = useState<string>('');
+  const [resTxHash, setResTxHash] = useState<string>('');
+  const ETHERSCAN_BASE = 'https://sepolia.etherscan.io';
+
+  const handleEditInputs = () => {
+    setShowSteps(false);
+    setInputsLocked(false);
+    setSubmitting(false);
+    setRegSubmitting(false);
+    setResSubmitting(false);
+    setRegStatus('idle');
+    setResStatus('idle');
+    setRegTxHash('');
+    setResTxHash('');
+    setResult(null);
+  };
 
   const validAddr = (x?: string) => !!x && /^0x[a-fA-F0-9]{40}$/.test(x) && x !== '0x0000000000000000000000000000000000000000';
   // ERC‑7930 identifiers are variable-length bytes. Accept 1–64 bytes (2–128 hex chars) with 0x prefix.
@@ -86,6 +104,7 @@ const RegisterMinimalForm: React.FC = () => {
 
       // Reveal step controls (no auto-submission)
       setShowSteps(true);
+      setInputsLocked(true);
       setResult(null);
       setRegStatus('idle');
       setResStatus('idle');
@@ -115,6 +134,7 @@ const RegisterMinimalForm: React.FC = () => {
         functionName: 'demoRegister',
         args: [name, account as `0x${string}`, cid],
       } as any);
+      setRegTxHash(tx1 as string);
       {
         const rcpt: any = await publicClient!.waitForTransactionReceipt({ hash: tx1 });
         if (rcpt?.status !== 'success') throw new Error('Registry transaction reverted');
@@ -143,6 +163,7 @@ const RegisterMinimalForm: React.FC = () => {
         functionName: 'demoRegister',
         args: [labelHash, account as `0x${string}`],
       } as any);
+      setResTxHash(tx2 as string);
       {
         const rcpt: any = await publicClient!.waitForTransactionReceipt({ hash: tx2 });
         if (rcpt?.status !== 'success') throw new Error('Resolver transaction reverted');
@@ -170,12 +191,12 @@ const RegisterMinimalForm: React.FC = () => {
         <div className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="label">Label</Label>
-            <Input id="label" placeholder="e.g., base" value={label} onChange={(e) => setLabel(e.target.value)} />
+            <Input id="label" placeholder="e.g., base" value={label} disabled={inputsLocked} onChange={(e) => setLabel(e.target.value)} />
             <div className="text-xs text-muted-foreground">Full name will be <code className="font-mono">{(label || '<label>')}.cid.eth</code></div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="cid">Chain Identifier (hex bytes)</Label>
-            <Input id="cid" placeholder="0x…" value={chainIdHex} onChange={(e) => setChainIdHex(e.target.value)} />
+            <Input id="cid" placeholder="0x…" value={chainIdHex} disabled={inputsLocked} onChange={(e) => setChainIdHex(e.target.value)} />
             <div className="text-xs text-muted-foreground">Example: <code className="font-mono">0x01</code>, <code className="font-mono">0xa4b1</code>, or longer (up to 64 bytes)</div>
           </div>
         </div>
@@ -193,6 +214,11 @@ const RegisterMinimalForm: React.FC = () => {
 
         {showSteps && (
           <div className="mt-4 space-y-3 text-sm">
+            <div className="flex items-center justify-end">
+              <Button type="button" variant="ghost" size="sm" onClick={handleEditInputs}>
+                Change inputs
+              </Button>
+            </div>
             {/* Step 1 */}
             <div className="flex items-center gap-3">
               <span className={
@@ -201,16 +227,24 @@ const RegisterMinimalForm: React.FC = () => {
                 regStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
                 'inline-block h-2.5 w-2.5 rounded-full bg-muted'
               } />
-              <span className="flex-1">1) Register on Registry</span>
+              <span className="flex-1">
+                1) Register {label?.trim() ? <code className="font-mono">{label.trim()}.cid.eth</code> : 'label.cid.eth'} in the
+                {' '}<a className="underline" href={`${ETHERSCAN_BASE}/address/${CHAIN_REGISTRY_ADDRESS}`} target="_blank" rel="noreferrer">chain identifier registry</a>
+              </span>
               <Button
                 type="button"
                 variant={regStatus === 'confirmed' ? 'secondary' : 'default'}
                 disabled={regSubmitting || regStatus === 'confirmed'}
                 onClick={handleRegistryRegister}
               >
-                {regSubmitting ? 'Submitting…' : regStatus === 'confirmed' ? 'Confirmed' : 'Submit'}
+                {regSubmitting ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting…</>) : regStatus === 'confirmed' ? 'Confirmed' : 'Submit'}
               </Button>
             </div>
+            {regTxHash && (
+              <div className="pl-6 text-xs text-muted-foreground">
+                <a className="underline" href={`${ETHERSCAN_BASE}/tx/${regTxHash}`} target="_blank" rel="noreferrer">View registry transaction on Etherscan</a>
+              </div>
+            )}
             {/* Step 2 */}
             <div className="flex items-center gap-3">
               <span className={
@@ -219,16 +253,21 @@ const RegisterMinimalForm: React.FC = () => {
                 resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
                 'inline-block h-2.5 w-2.5 rounded-full bg-muted'
               } />
-              <span className="flex-1">2) Assign on Resolver</span>
+              <span className="flex-1">2) Assign on ENS Resolver</span>
               <Button
                 type="button"
                 variant={resStatus === 'confirmed' ? 'secondary' : 'default'}
                 disabled={resSubmitting || regStatus !== 'confirmed' || resStatus === 'confirmed'}
                 onClick={handleResolverAssign}
               >
-                {resSubmitting ? 'Submitting…' : resStatus === 'confirmed' ? 'Confirmed' : 'Submit'}
+                {resSubmitting ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting…</>) : resStatus === 'confirmed' ? 'Confirmed' : 'Submit'}
               </Button>
             </div>
+            {resTxHash && (
+              <div className="pl-6 text-xs text-muted-foreground">
+                <a className="underline" href={`${ETHERSCAN_BASE}/tx/${resTxHash}`} target="_blank" rel="noreferrer">View resolver transaction on Etherscan</a>
+              </div>
+            )}
           </div>
         )}
 
@@ -247,10 +286,13 @@ const RegisterMinimalForm: React.FC = () => {
               <span className="opacity-70">→</span>
               <code className="font-mono break-all">{result.chainId}</code>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 space-y-1">
               <Link href={`/resolve?label=${encodeURIComponent(result.label)}`} className="inline-block">
-                <Button variant="secondary">Go to Resolve</Button>
+                <Button variant="secondary">Test Resolution</Button>
               </Link>
+              <div className="text-xs text-muted-foreground">
+                Opens the Resolve page and looks up <code className="font-mono">{result.label}.cid.eth</code> via the ENS resolver.
+              </div>
             </div>
           </div>
         ) : null}

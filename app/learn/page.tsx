@@ -11,7 +11,7 @@ export default function LearnPage() {
           <h1 className="text-4xl font-bold text-primary">Ethereum Chain Registry — Reference Hub</h1>
           <p className="text-foreground/90 text-s leading-relaxed">
             This app demos an on-chain registry for mapping a short label (like <code className="font-mono">base</code>)
-            to an ERC‑7930 chain identifier and back again. It uses a Registry for storage and two ENSIP‑10 resolvers for reads.
+            to an <a className="underline" href="https://eips.ethereum.org/EIPS/eip-7930" target="_blank" rel="noreferrer">ERC‑7930</a> chain identifier and back again. It uses a Registry for storage and two <a className="underline" href="https://docs.ens.domains/ensip/10" target="_blank" rel="noreferrer">ENSIP‑10</a> resolvers for reads.
           </p>
           <p className="text-xs text-muted-foreground">
             Looking for a deeper dive? Read the contracts README{' '}
@@ -197,7 +197,7 @@ export default function LearnPage() {
                 Chain Registry — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/chain-registry">GitHub repo</a>
               </li>
               <li>
-                ENSIP‑5 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ens-improvement-proposals/ensip-5-text-records">Text record conventions</a>
+                ENSIP‑5 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ensip/5">Text record conventions</a>
               </li>
               <li>
                 EIP‑155 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-155">Settlement chain IDs</a>
@@ -215,10 +215,10 @@ export default function LearnPage() {
                 ENSIP‑TBD‑19 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md">Binary data() for chain IDs</a>
               </li>
               <li>
-                ENSIP‑10 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ens-improvement-proposals/ensip-10-multi-coin-support">resolve(bytes name, bytes data)</a>
+                ENSIP‑10 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ensip/10">resolve(bytes name, bytes data)</a>
               </li>
               <li>
-                ENSIP‑11 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/ensdomains/docs/blob/master/ens-improvement-proposals/ensip-11.md">Coin types and formats</a>
+                ENSIP‑11 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ensip/11">Coin types and formats</a>
               </li>
               <li>
                 OP Docs — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.optimism.io/interop/explainer">Superchain interoperability</a>

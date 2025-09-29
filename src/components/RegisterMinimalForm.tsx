@@ -30,6 +30,9 @@ const RegisterMinimalForm: React.FC = () => {
   type StepStatus = 'idle' | 'pending' | 'confirmed' | 'error';
   const [regStatus, setRegStatus] = useState<StepStatus>('idle');
   const [resStatus, setResStatus] = useState<StepStatus>('idle');
+  const [showSteps, setShowSteps] = useState(false);
+  const [regSubmitting, setRegSubmitting] = useState(false);
+  const [resSubmitting, setResSubmitting] = useState(false);
 
   const validAddr = (x?: string) => !!x && /^0x[a-fA-F0-9]{40}$/.test(x) && x !== '0x0000000000000000000000000000000000000000';
   // ERC‑7930 identifiers are variable-length bytes. Accept 1–64 bytes (2–128 hex chars) with 0x prefix.
@@ -81,33 +84,57 @@ const RegisterMinimalForm: React.FC = () => {
         }
       } catch {}
 
-      setSubmitting(true);
+      // Reveal step controls (no auto-submission)
+      setShowSteps(true);
       setResult(null);
-      setRegStatus('pending');
+      setRegStatus('idle');
       setResStatus('idle');
       // Optional network hint
       try { await switchChain({ chainId: TARGET_CHAIN_ID }); } catch { }
-      // Heads-up: two transactions before first prompt
-      toast({ title: 'Action Required', description: 'You will sign 2 transactions: (1) Registry.register, (2) Resolver.register.' });
+    } catch (e: any) {
+      const msg = e?.shortMessage || e?.reason || e?.message || 'Transaction failed.';
+      toast({ variant: 'destructive', title: 'Register Failed', description: msg });
+      if (regStatus === 'pending') setRegStatus('error');
+      if (resStatus === 'pending') setResStatus('error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-      // 1) Registry.register(name, owner=account, chainId=bytes32)
+  const handleRegistryRegister = async () => {
+    const registry = CHAIN_REGISTRY_ADDRESS as `0x${string}`;
+    const resolver = CHAIN_RESOLVER_ADDRESS as `0x${string}`;
+    const name = label.trim().toLowerCase();
+    const cid = chainIdHex.trim();
+    try {
+      setRegSubmitting(true);
+      setRegStatus('pending');
       const tx1 = await writeContractAsync({
         address: registry,
         abi: CHAIN_REGISTRY_ABI as unknown as Abi,
         functionName: 'demoRegister',
         args: [name, account as `0x${string}`, cid],
       } as any);
-      toast({ title: 'Registry: Submitted', description: 'Waiting for confirmation…' });
       {
         const rcpt: any = await publicClient!.waitForTransactionReceipt({ hash: tx1 });
-        if (rcpt?.status !== 'success') {
-          throw new Error('Registry transaction reverted');
-        }
+        if (rcpt?.status !== 'success') throw new Error('Registry transaction reverted');
       }
-      toast({ title: 'Registry: Confirmed', description: 'Chain registered on registry.' });
       setRegStatus('confirmed');
+      toast({ title: 'Registry: Confirmed', description: 'Chain registered on registry.' });
+    } catch (e: any) {
+      setRegStatus('error');
+      toast({ variant: 'destructive', title: 'Registry Failed', description: e?.shortMessage || e?.reason || e?.message || 'Registry transaction failed.' });
+    } finally {
+      setRegSubmitting(false);
+    }
+  };
 
-      // 2) Resolver.register(labelHash, owner=account)
+  const handleResolverAssign = async () => {
+    const resolver = CHAIN_RESOLVER_ADDRESS as `0x${string}`;
+    const name = label.trim().toLowerCase();
+    const cid = chainIdHex.trim();
+    try {
+      setResSubmitting(true);
       setResStatus('pending');
       const labelHash = keccak256(toUtf8Bytes(name)) as `0x${string}`;
       const tx2 = await writeContractAsync({
@@ -116,30 +143,19 @@ const RegisterMinimalForm: React.FC = () => {
         functionName: 'demoRegister',
         args: [labelHash, account as `0x${string}`],
       } as any);
-      toast({ title: 'Resolver: Submitted', description: 'Waiting for confirmation…' });
       {
         const rcpt: any = await publicClient!.waitForTransactionReceipt({ hash: tx2 });
-        if (rcpt?.status !== 'success') {
-          throw new Error('Resolver transaction reverted');
-        }
+        if (rcpt?.status !== 'success') throw new Error('Resolver transaction reverted');
       }
-      toast({ title: 'Resolver: Confirmed', description: 'Label registered with resolver.' });
       setResStatus('confirmed');
-
+      toast({ title: 'Resolver: Confirmed', description: 'Label registered with resolver.' });
       setResult({ label: name, chainId: cid });
-      // Persist only for this tab so CTA appears after a successful register
-      try {
-        sessionStorage.setItem('justRegisteredLabel', name);
-      } catch {}
-      setLabel('');
-      setChainIdHex('');
+      try { sessionStorage.setItem('justRegisteredLabel', name); } catch {}
     } catch (e: any) {
-      const msg = e?.shortMessage || e?.reason || e?.message || 'Transaction failed.';
-      toast({ variant: 'destructive', title: 'Register Failed', description: msg });
-      if (regStatus === 'pending') setRegStatus('error');
-      if (resStatus === 'pending') setResStatus('error');
+      setResStatus('error');
+      toast({ variant: 'destructive', title: 'Assignment Failed', description: e?.shortMessage || e?.reason || e?.message || 'Resolver transaction failed.' });
     } finally {
-      setSubmitting(false);
+      setResSubmitting(false);
     }
   };
 
@@ -164,7 +180,7 @@ const RegisterMinimalForm: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onSubmit} disabled={submitting || switching} className="w-full">
+          <Button onClick={onSubmit} disabled={submitting || switching || showSteps} className="w-full">
             {submitting
               ? regStatus === 'pending' || (regStatus === 'confirmed' && resStatus === 'idle')
                 ? 'Registering…'
@@ -175,34 +191,44 @@ const RegisterMinimalForm: React.FC = () => {
           </Button>
         </div>
 
-        {(submitting || regStatus !== 'idle' || resStatus !== 'idle') && (
-          <div className="mt-3 space-y-2 text-sm">
-            <div className="flex items-center gap-2">
+        {showSteps && (
+          <div className="mt-4 space-y-3 text-sm">
+            {/* Step 1 */}
+            <div className="flex items-center gap-3">
               <span className={
-                regStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
-                  regStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
-                    regStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
-                      'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+                regStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-500' :
+                regStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse' :
+                regStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                'inline-block h-2.5 w-2.5 rounded-full bg-muted'
               } />
-              <span>Register on Registry</span>
-              <span className="ml-auto text-xs opacity-70">
-                {regStatus === 'confirmed' ? 'Confirmed' : regStatus === 'pending' ? 'Submitting' : regStatus === 'error' ? 'Failed' : ''}
-              </span>
+              <span className="flex-1">1) Register on Registry</span>
+              <Button
+                type="button"
+                variant={regStatus === 'confirmed' ? 'secondary' : 'default'}
+                disabled={regSubmitting || regStatus === 'confirmed'}
+                onClick={handleRegistryRegister}
+              >
+                {regSubmitting ? 'Submitting…' : regStatus === 'confirmed' ? 'Confirmed' : 'Submit'}
+              </Button>
             </div>
-            {(regStatus === 'confirmed' || resStatus !== 'idle') && (
-              <div className="flex items-center gap-2">
-                <span className={
-                  resStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-400' :
-                    resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse' :
-                      resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
-                        'inline-block h-2.5 w-2.5 rounded-full bg-muted'
-                } />
-                <span>Assign on Resolver</span>
-                <span className="ml-auto text-xs opacity-70">
-                  {resStatus === 'confirmed' ? 'Confirmed' : resStatus === 'pending' ? 'Submitting' : resStatus === 'error' ? 'Failed' : ''}
-                </span>
-              </div>
-            )}
+            {/* Step 2 */}
+            <div className="flex items-center gap-3">
+              <span className={
+                resStatus === 'confirmed' ? 'inline-block h-2.5 w-2.5 rounded-full bg-emerald-500' :
+                resStatus === 'pending' ? 'inline-block h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse' :
+                resStatus === 'error' ? 'inline-block h-2.5 w-2.5 rounded-full bg-red-500' :
+                'inline-block h-2.5 w-2.5 rounded-full bg-muted'
+              } />
+              <span className="flex-1">2) Assign on Resolver</span>
+              <Button
+                type="button"
+                variant={resStatus === 'confirmed' ? 'secondary' : 'default'}
+                disabled={resSubmitting || regStatus !== 'confirmed' || resStatus === 'confirmed'}
+                onClick={handleResolverAssign}
+              >
+                {resSubmitting ? 'Submitting…' : resStatus === 'confirmed' ? 'Confirmed' : 'Submit'}
+              </Button>
+            </div>
           </div>
         )}
 

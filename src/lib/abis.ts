@@ -1,8 +1,13 @@
-export const CHAIN_REGISTRY_ABI = [
+export const CHAIN_RESOLVER_ABI = [
   {
     inputs: [{ internalType: "address", name: "_owner", type: "address" }],
     stateMutability: "nonpayable",
     type: "constructor",
+  },
+  {
+    inputs: [{ internalType: "bytes", name: "dns", type: "bytes" }],
+    name: "DNSDecodingFailed",
+    type: "error",
   },
   { inputs: [], name: "InvalidDataLength", type: "error" },
   {
@@ -112,166 +117,6 @@ export const CHAIN_REGISTRY_ABI = [
     type: "event",
   },
   {
-    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
-    name: "chainId",
-    outputs: [{ internalType: "bytes", name: "_chainId", type: "bytes" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "bytes", name: "_chainIdBytes", type: "bytes" }],
-    name: "chainName",
-    outputs: [{ internalType: "string", name: "_chainName", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "address", name: "_address", type: "address" },
-    ],
-    name: "isAuthorized",
-    outputs: [{ internalType: "bool", name: "_authorized", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "owner",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "string", name: "_chainName", type: "string" },
-      { internalType: "address", name: "_owner", type: "address" },
-      { internalType: "bytes", name: "_chainId", type: "bytes" },
-    ],
-    name: "register",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "string", name: "_chainName", type: "string" },
-      { internalType: "address", name: "_owner", type: "address" },
-      { internalType: "bytes", name: "_chainId", type: "bytes" },
-    ],
-    name: "demoRegister",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "renounceOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "address", name: "_owner", type: "address" },
-    ],
-    name: "setLabelOwner",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "_operator", type: "address" },
-      { internalType: "bool", name: "_isOperator", type: "bool" },
-    ],
-    name: "setOperator",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "bytes", name: "_chainId", type: "bytes" },
-      { internalType: "string", name: "_chainName", type: "string" },
-    ],
-    name: "setRecord",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "bytes32[]", name: "_labelHashes", type: "bytes32[]" },
-      { internalType: "bytes[]", name: "_chainIds", type: "bytes[]" },
-      { internalType: "string[]", name: "_chainNames", type: "string[]" },
-    ],
-    name: "setRecords",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "bytes4", name: "_interfaceId", type: "bytes4" }],
-    name: "supportsInterface",
-    outputs: [{ internalType: "bool", name: "_isSupported", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "newOwner", type: "address" }],
-    name: "transferOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
-
-export const CHAIN_RESOLVER_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "_chainIDRegistry", type: "address" },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    inputs: [{ internalType: "bytes", name: "dns", type: "bytes" }],
-    name: "DNSDecodingFailed",
-    type: "error",
-  },
-  {
-    inputs: [{ internalType: "address", name: "owner", type: "address" }],
-    name: "OwnableInvalidOwner",
-    type: "error",
-  },
-  {
-    inputs: [{ internalType: "address", name: "account", type: "address" }],
-    name: "OwnableUnauthorizedAccount",
-    type: "error",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "previousOwner",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
-      },
-    ],
-    name: "OwnershipTransferred",
-    type: "event",
-  },
-  {
     inputs: [],
     name: "ADDR_COINTYPE_SELECTOR",
     outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
@@ -287,21 +132,14 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [],
-    name: "BASE_NODE",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    name: "CHAIN_ID_KEY",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "CHAIN_ID_DATA_KEY",
-    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "CHAIN_ID_TEXT_KEY",
+    name: "CHAIN_NAME_PREFIX",
     outputs: [{ internalType: "string", name: "", type: "string" }],
     stateMutability: "view",
     type: "function",
@@ -335,19 +173,39 @@ export const CHAIN_RESOLVER_ABI = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "owner",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
+    inputs: [
+      { internalType: "string[]", name: "_chainNames", type: "string[]" },
+      { internalType: "address[]", name: "_owners", type: "address[]" },
+      { internalType: "bytes[]", name: "_chainIds", type: "bytes[]" },
+    ],
+    name: "batchRegister",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
+    name: "chainId",
+    outputs: [{ internalType: "bytes", name: "_chainId", type: "bytes" }],
     stateMutability: "view",
     type: "function",
   },
   {
-    inputs: [],
-    name: "chainIDRegistry",
-    outputs: [
-      { internalType: "contract IChainRegistry", name: "", type: "address" },
-    ],
+    inputs: [{ internalType: "bytes", name: "_chainIdBytes", type: "bytes" }],
+    name: "chainName",
+    outputs: [{ internalType: "string", name: "_chainName", type: "string" }],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "string", name: "_chainName", type: "string" },
+      { internalType: "address", name: "_owner", type: "address" },
+      { internalType: "bytes", name: "_chainId", type: "bytes" },
+    ],
+    name: "demoRegister",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -396,11 +254,11 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "address", name: "_owner", type: "address" },
-      { internalType: "address", name: "_operator", type: "address" },
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "address", name: "_address", type: "address" },
     ],
-    name: "isOperator",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    name: "isAuthorized",
+    outputs: [{ internalType: "bool", name: "_authorized", type: "bool" }],
     stateMutability: "view",
     type: "function",
   },
@@ -413,8 +271,9 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "string", name: "_chainName", type: "string" },
       { internalType: "address", name: "_owner", type: "address" },
+      { internalType: "bytes", name: "_chainId", type: "bytes" },
     ],
     name: "register",
     outputs: [],
@@ -472,8 +331,18 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
+      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "address", name: "_owner", type: "address" },
+    ],
+    name: "setLabelOwner",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
       { internalType: "address", name: "_operator", type: "address" },
-      { internalType: "bool", name: "_authorized", type: "bool" },
+      { internalType: "bool", name: "_isOperator", type: "bool" },
     ],
     name: "setOperator",
     outputs: [],
@@ -492,30 +361,10 @@ export const CHAIN_RESOLVER_ABI = [
     type: "function",
   },
   {
-    inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "address", name: "_owner", type: "address" },
-    ],
-    name: "demoRegister",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
     name: "supportsInterface",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "pure",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "address", name: "_owner", type: "address" },
-    ],
-    name: "register",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -523,91 +372,6 @@ export const CHAIN_RESOLVER_ABI = [
     name: "transferOwnership",
     outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "_chainIDRegistry", type: "address" },
-    ],
-    name: "updateChainIDRegistry",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
-
-export const REVERSE_CHAIN_RESOLVER_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "_chainRegistry", type: "address" },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    inputs: [{ internalType: "bytes", name: "dns", type: "bytes" }],
-    name: "DNSDecodingFailed",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "BASE_NODE",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "CHAIN_NAME_DATA_PREFIX",
-    outputs: [{ internalType: "string", name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "CHAIN_NAME_TEXT_PREFIX",
-    outputs: [{ internalType: "string", name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "DATA_SELECTOR",
-    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "TEXT_SELECTOR",
-    outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "chainRegistry",
-    outputs: [
-      { internalType: "contract IChainRegistry", name: "", type: "address" },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "bytes", name: "name", type: "bytes" },
-      { internalType: "bytes", name: "data", type: "bytes" },
-    ],
-    name: "resolve",
-    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
-    name: "supportsInterface",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "pure",
     type: "function",
   },
 ] as const;

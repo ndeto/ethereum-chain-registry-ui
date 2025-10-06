@@ -10,15 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import { type Abi } from 'viem';
 import { ethers, Interface, dnsEncode, keccak256, toUtf8Bytes, AbiCoder, getBytes, hexlify, concat } from 'ethers';
-import { CHAIN_RESOLVER_ADDRESS, REVERSE_RESOLVER_ADDRESS } from '@/lib/addresses';
+import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
+import { CHAIN_RESOLVER_ABI } from '@/lib/abis';
 import { Loader2, Search } from 'lucide-react';
 const RESOLVER = CHAIN_RESOLVER_ADDRESS as string;
-
-// ENSIP-10 resolve() surface
-const CHAIN_RESOLVER_ABI = [
-  { type: 'function', name: 'resolve', stateMutability: 'view', inputs: [{ name: 'name', type: 'bytes' }, { name: 'data', type: 'bytes' }], outputs: [{ name: '', type: 'bytes' }] },
-] as const;
-
 
 const ChainResolverForm: React.FC = () => {
   const { toast } = useToast();
@@ -82,9 +77,9 @@ const ChainResolverForm: React.FC = () => {
 
       // Do not mutate URL; params are only used when arriving from Register
 
-      // Reverse mapping via ReverseResolver: data(bytes32,bytes) with key = abi.encode("chain-name:") || chainIdBytes
+      // Reverse mapping via the same resolver: data(bytes32,bytes) with key = abi.encode("chain-name:") || chainIdBytes
       try {
-        const reverseAddr = REVERSE_RESOLVER_ADDRESS as string;
+        const reverseAddr = RESOLVER as string;
         if (reverseAddr && /^0x[a-fA-F0-9]{40}$/.test(reverseAddr) && reverseAddr !== '0x0000000000000000000000000000000000000000') {
           const prefix = AbiCoder.defaultAbiCoder().encode(['string'], ['chain-name:']);
           const keyBytes = hexlify(concat([getBytes(prefix), getBytes(chainIdHex)]));

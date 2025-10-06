@@ -1,6 +1,6 @@
-# Ethereum Chain ID Registry — Demo
+# Ethereum Chain Resolver — Demo
 
-Minimal UI to register labels and resolve them via ENSIP‑10 resolvers.
+Minimal UI to register labels and resolve them via the unified ENSIP‑10 resolver.
 
 ## Quick start
 
@@ -13,15 +13,10 @@ Open http://localhost:3000.
 
 ## Environment
 
-Create `.env.local` from the example and set your contract addresses:
+Create `.env.local` from the example and set your contract address:
 
 ```
-NEXT_PUBLIC_CHAIN_REGISTRY_ADDRESS=0x...
 NEXT_PUBLIC_CHAIN_RESOLVER_ADDRESS=0x...
-NEXT_PUBLIC_REVERSE_RESOLVER_ADDRESS=0x...
-
-# Optional, comma‑separated
-NEXT_PUBLIC_SEPOLIA_RPC_URLS=https://ethereum-sepolia.publicnode.com,https://rpc.sepolia.org
 ```
 
 All envs are client‑visible; do not put secrets here.
@@ -29,7 +24,7 @@ All envs are client‑visible; do not put secrets here.
 ## Pages
 
 - Register (`/` or `/register`)
-  - Demo: calls `registry.demoRegister(...)` and `resolver.demoRegister(...)`.
+  - Calls `resolver.register(name, owner, chainIdBytes)`.
 - Resolve (`/resolve`)
   - Enter a label (e.g., `optimism`) to read the chain identifier.
   - Result includes a link to “Reverse Resolve”.
@@ -40,5 +35,5 @@ All envs are client‑visible; do not put secrets here.
 
 ## Deployments
 
-Use the deploy scripts in the Chain Registry repo, then set the env vars above:
-https://github.com/unruggable-labs/chain-registry
+Use the deploy scripts in the Chain Resolver repo, then set the env var above:
+https://github.com/unruggable-labs/chain-resolver

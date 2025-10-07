@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight } from 'lucide-react'
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses'
 
 export default function LearnPage() {
@@ -8,18 +7,38 @@ export default function LearnPage() {
       <div className="mx-auto max-w-6xl space-y-8">
         {/* Hero */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-primary">Ethereum Chain Resolver — Reference Hub</h1>
-          <p className="text-foreground/90 text-s leading-relaxed">
-            This app demos a unified resolver that maps a short label (like <code className="font-mono">base</code>)
-            to an <a className="underline" href="https://eips.ethereum.org/EIPS/eip-7930" target="_blank" rel="noreferrer">ERC‑7930</a> chain ID and back again via <a className="underline" href="https://docs.ens.domains/ensip/10" target="_blank" rel="noreferrer">ENSIP‑10</a>.
+          <h1 className="text-4xl font-bold text-primary">
+            Chain Resolver — Reference Hub
+          </h1>
+          <p className="text-foreground/90 text-sm leading-relaxed">
+            This app demos a unified resolver that maps a short label (like{" "}
+            <code className="font-mono">base</code>) to an{" "}
+            <a
+              className="underline"
+              href="https://eips.ethereum.org/EIPS/eip-7930"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ERC-7930
+            </a>{" "}
+            chain identifier and back again via{" "}
+            <a
+              className="underline"
+              href="https://docs.ens.domains/ensip/10"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ENSIP-10
+            </a>
+            .
           </p>
           <p className="text-xs text-muted-foreground">
-            Looking for a deeper dive? Read the contracts README{' '}
+            Looking for a deeper dive? Read the contracts README{" "}
             <a
               className="underline"
               target="_blank"
               rel="noreferrer"
-              href="https://github.com/unruggable-labs/chain-registry#readme"
+              href="https://github.com/unruggable-labs/chain-resolver#readme"
             >
               on GitHub
             </a>
@@ -28,100 +47,201 @@ export default function LearnPage() {
         </div>
 
         {/* Contracts – simplified cards */}
-        <div className="space-y-6">
-          {/* Unified Resolver overview */}
+        <div className="space-y-6"> {/* Unified Resolver */}
           <Card className="border border-primary/10 bg-background/50 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Unified Resolver (ChainResolver.sol)
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
+
+            <CardContent className="text-sm text-muted-foreground space-y-4">
               <p>
-                The unified resolver stores chain identifiers and label mappings and serves ENS records via <a className="underline" href="https://docs.ens.domains/ensip/10" target="_blank" rel="noreferrer">ENSIP‑10</a>.
-                The mappings are keyed by the labelhash, where labelhash = keccak("optimism"). Read operations use the extended resolver entrypoint <code className="font-mono">resolve(bytes name, bytes data)</code>.
+                The unified resolver stores chain identifiers and label mappings (
+                <a className="underline" href="#eip-7930">see 7930 chain identifier</a>
+                ).
               </p>
-              <div className="text-xs text-muted-foreground">
-                Repo: <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/chain-resolver">unruggable-labs/chain-resolver</a>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Forward Resolver */}
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">Forward Resolver (ChainResolver.sol)</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-3">
               <p>
-                Read operations use <a className="underline" href="https://docs.ens.domains/ensip/10" target="_blank" rel="noreferrer">ENSIP‑10</a> <code className="font-mono">resolve(bytes name, bytes data)</code> so clients can call standard ENS selectors and pull chain metadata directly from the ENS name.
+                It implements{" "}
+                <a
+                  className="underline"
+                  href="https://docs.ens.domains/ensip/10"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ENSIP-10
+                </a>, meaning read operations use the extended resolver entrypoint{" "}
+                <code className="font-mono">resolve(bytes name, bytes data)</code>.
+              </p>
+              <p>
+                Mappings are keyed by labelhash, computed as{" "}
+                <code className="font-mono">labelhash = keccak256(bytes(label))</code>{" "}
+                for the left‑most label (e.g., <code className="font-mono">label = "optimism"</code>).
               </p>
 
-              <ul className="list-disc pl-5 space-y-0.5">
-                <li>Resolve function: <code className="font-mono">resolve(bytes name, bytes data) returns (bytes)</code></li>
-
-                <li>
-                  Reads (selectors):
-                  <div className="mt-1 pl-4">
-                    <div>
-                      • <a className="underline" href="https://docs.ens.domains/ensip/5" target="_blank" rel="noreferrer">ENSIP‑5</a> <code className="font-mono">text(bytes32,string)</code> — special key <code className="font-mono">"chain-id"</code> returns the on‑chain 7930 bytes as a hex string (no <span className="font-mono">0x</span>), ignoring any user‑set text under that key (see also <a className="underline" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-18.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑18</a>).
-                    </div>
-                    <div>
-                      • <a className="underline" href="https://docs.ens.domains/ensip/9" target="_blank" rel="noreferrer">ENSIP‑9</a> <code className="font-mono">addr</code> — multi‑coin addresses (coinType 60 = ETH)
-                    </div>
-                    <div>
-                      • <a className="underline" href="https://docs.ens.domains/ensip/7" target="_blank" rel="noreferrer">ENSIP‑7</a> <code className="font-mono">contenthash</code>
-                    </div>
-                    <div>
-                      • Early draft <a className="underline" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑19</a> <code className="font-mono">data(bytes32,bytes)</code> — used here for reverse with the <code className="font-mono">"chain-name:"</code> service key.
-                    </div>
-                  </div>
-                </li>
-                <li>Labelhash: compute <code className="font-mono">labelHash = keccak256(bytes(label))</code> for the left‑most label.</li>
-                <li>Source of truth: values come from the resolver’s internal storage.</li>
-                <li>Supports <code className="font-mono">addr</code>, <code className="font-mono">contenthash</code>, <code className="font-mono">text</code>, and <code className="font-mono">data</code>.</li>
-              </ul>
-              <p>Forward resolution flow:</p>
+              {/* Combined forward + reverse flow diagram */}
               <div className="w-full overflow-hidden rounded-lg border border-primary/10 bg-muted/10 flex justify-center">
                 <img
-                  src="/learn/resolve.png"
-                  alt="Forward Chain Resolution Flow"
-                  className="h-auto w-full sm:w-[80%] lg:w-[50%] xl:w-[40%]"
+                  src="/learn/resolutionflow.png"
+                  alt="Forward and Reverse Resolution Flow"
+                  loading="lazy"
+                  className="h-auto w-full sm:w-[80%] lg:w-[60%] xl:w-[50%]"
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Reverse path — same resolver */}
-          <Card className="border border-primary/10 bg-background/50 shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">Reverse (same resolver)</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-3">
-              <p>
-                Reverse lookups use a service key (<a className="underline" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑17</a>):
-                <code className="font-mono"> key = bytes('chain-name:') || chainIdBytes</code> passed via <code className="font-mono">data(node, key)</code> (<a className="underline" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md" target="_blank" rel="noreferrer">ENSIP‑TBD‑19</a>). The <code className="font-mono">text</code> path is also supported with <code className="font-mono">"chain-name:&lt;7930hex&gt;"</code>.
-              </p>
-              <p>Reverse resolution flow:</p>
-              <div className="w-full overflow-hidden rounded-lg border border-primary/10 bg-muted/10 flex justify-center">
-                <img src="/learn/reverseresolve.png" alt="Reverse Chain Resolution Flow" className="h-auto w-full sm:w-[80%] lg:w-[50%] xl:w-[40%]" />
+              {/* Forward */}
+              <section className="space-y-2">
+                <div className="font-semibold text-foreground">Forward Resolution</div>
+                <p className="text-muted-foreground">
+                  The ENS field <code className="font-mono">text(..., "chain-id")</code> (see{" "}
+                  <a
+                    className="underline"
+                    href="https://docs.ens.domains/ensip/5"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    ENSIP-5
+                  </a>
+                  ) returns the chain’s 7930 ID as a hex string. This value is written at registration by the
+                  contract owner (e.g., a multisig) and the resolver ignores any user-set text under that key. To
+                  resolve a chain ID:
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>
+                    DNS-encode the ENS name (e.g.,{" "}
+                    <code className="font-mono">optimism.cid.eth</code>).
+                  </li>
+                  <li>
+                    Compute{" "}
+                    <code className="font-mono">
+                      labelhash = keccak256(bytes(label))
+                    </code>{" "}
+                    (e.g., <code className="font-mono">label = "optimism"</code>).
+                  </li>
+                  <li>
+                    Call{" "}
+                    <code className="font-mono">
+                      resolve(name, abi.encodeWithSelector(text(labelhash,"chain-id")))
+                    </code>
+                    {" "}
+                    → returns a hex string without{" "}
+                    <code className="font-mono">0x</code> (prepend it client-side).
+                  </li>
+                </ul>
+              </section>
+
+              {/* Reverse */}
+              <section className="space-y-2">
+                <div className="font-semibold text-foreground">Reverse Resolution</div>
+                <p className="text-muted-foreground">
+                  Pass a key prefixed with <code className="font-mono">"chain-name:"</code> and suffixed with the
+                  7930 hex via either{" "}
+                  <code className="font-mono">text(bytes32,string)</code> or{" "}
+                  <code className="font-mono">data(bytes32,string)</code>; the resolver returns the chain name. This
+                  uses service key parameters per{" "}
+                  <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md">ENSIP‑TBD‑17</a>{" "}
+                  and supports the <code className="font-mono">data()</code> path per{" "}
+                  <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md">ENSIP‑TBD‑19</a>.
+                  For example:
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>
+                    serviceKey (string):{" "}
+                    <code className="font-mono">"chain-name:&lt;7930-hex&gt;"</code>
+                  </li>
+                  <li>
+                    Calls:
+                    <div className="mt-1 pl-4">
+                      <div>
+                        •{" "}
+                        <code className="font-mono">
+                          resolve(name, encode(text(labelhash, serviceKey)))
+                        </code>
+                      </div>
+                      <div>
+                        •{" "}
+                        <code className="font-mono">
+                          resolve(name, encode(data(labelhash, dataKey)))
+                        </code>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+
+              <div className="text-xs text-muted-foreground">
+                Repo:{" "}
+                <a
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                  href="https://github.com/unruggable-labs/chain-resolver"
+                >
+                  unruggable-labs/chain-resolver
+                </a>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Identifier size & demo limits */}
+
+        {/* 7930 Chain Identifier */}
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">Identifier Size & Demo Limits</CardTitle>
+            <CardTitle id="eip-7930" className="flex items-center gap-2">
+              7930 Chain Identifier
+            </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
+
+          <CardContent className="text-sm text-muted-foreground space-y-3">
+            <p>
+              We use the chain identifier with a zero address from{" "}
+              <a
+                className="underline"
+                href="https://eips.ethereum.org/EIPS/eip-7930"
+                target="_blank"
+                rel="noreferrer"
+              >
+                ERC-7930
+              </a>
+              . It’s a compact blob that includes a chain type and a short reference.
+            </p>
+
             <ul className="list-disc pl-5 space-y-1">
-              <li>7930 theoretical maximum: 263 bytes total (8 bytes overhead + up to 255‑byte ChainRef; no address payload). See <a className="underline" href="https://eips.ethereum.org/EIPS/eip-7930" target="_blank" rel="noreferrer">EIP‑7930</a>.</li>
-              <li>EVM maximum: 40 bytes (8 + 32). This aligns with <a className="underline" href="https://chainagnostic.org/CAIPs/caip-2" target="_blank" rel="noreferrer">CAIP‑2</a> (<code className="font-mono">eip155:&lt;id&gt;</code>), treating the chain ID integer as ≤ 32 bytes.</li>
-              <li>Non‑EVM common case: most <a className="underline" href="https://chainagnostic.org/CAIPs/caip-2" target="_blank" rel="noreferrer">CAIP‑2</a> references are ≤ 32 bytes, so ≤ 40‑byte 7930 IDs are typical; 7930 still allows up to 263 bytes.</li>
-              <li>Demo cap: this demo caps <code className="font-mono">chainId</code> at 40 bytes total for simplicity and interop.</li>
+              <li>
+                EVM chains: the reference is the{" "}
+                <a
+                  className="underline"
+                  href="https://chainagnostic.org/CAIPs/caip-2"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  CAIP-2
+                </a>{" "}
+                <code className="font-mono">eip155:&lt;id&gt;</code> chain number, written as bytes. We
+                treat that number as ≤ 32 bytes, so the total identifier is ≤ 40 bytes (8 bytes
+                overhead + up to 32 for the ID).
+              </li>
+              <li>
+                Most non-EVM chains: their CAIP-2 references are also short in practice, so
+                identifiers are typically ≤ 40 bytes too.
+              </li>
+              <li>
+                Full spec limit: the generic ERC-7930 format allows up to 263 bytes in total.
+              </li>
             </ul>
+
+            <p className="text-xs text-muted-foreground">
+              More details and examples: {" "}
+              <a
+                className="underline"
+                target="_blank"
+                rel="noreferrer"
+                href="https://github.com/unruggable-labs/chain-resolver"
+              >
+                chain-resolver README
+              </a>
+            </p>
           </CardContent>
         </Card>
 
@@ -160,7 +280,7 @@ export default function LearnPage() {
                 Chain Resolver — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/chain-resolver">GitHub repo</a>
               </li>
               <li>
-                EIP‑7930 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">Chain‑aware identifiers</a>
+                ERC‑7930 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">Chain‑aware addresses (used here for chain identifiers)</a>
               </li>
               <li>
                 CAIP‑2 — <a className="underline" target="_blank" rel="noreferrer" href="https://chainagnostic.org/CAIPs/caip-2">Blockchain ID mapping</a>
@@ -184,7 +304,7 @@ export default function LearnPage() {
                 ENSIP‑TBD‑18 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-18.md">Global <code className="font-mono">chain-id</code> text record</a>
               </li>
               <li>
-                ENSIP‑TBD‑19 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md"><code className="font-mono">data()</code> binary records</a>
+                ENSIP‑TBD‑19 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md"><code className="font-mono">data()</code> records</a>
               </li>
               <li>
                 ENSIP‑11 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ensip/11">Coin types and formats</a>

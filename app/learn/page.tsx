@@ -119,13 +119,19 @@ export default function LearnPage() {
                     (e.g., <code className="font-mono">label = "optimism"</code>).
                   </li>
                   <li>
-                    Call{" "}
-                    <code className="font-mono">
-                      resolve(name, abi.encodeWithSelector(text(labelhash,"chain-id")))
-                    </code>
-                    {" "}
-                    → returns a hex string without{" "}
-                    <code className="font-mono">0x</code> (prepend it client-side).
+                    Calls{" "}
+                    <ul>
+                      <li>
+                        <code className="font-mono">
+                          resolve(name, encode(text(labelhash,"chain-id")))
+                        </code>
+                      </li>
+                      <li>
+                        <code className="font-mono">
+                          resolve(name, encode(data(labelhash,"chain-id")))
+                        </code>
+                      </li>
+                    </ul>
                   </li>
                 </ul>
               </section>
@@ -134,8 +140,7 @@ export default function LearnPage() {
               <section className="space-y-2">
                 <div className="font-semibold text-foreground">Reverse Resolution</div>
                 <p className="text-muted-foreground">
-                  Pass a key prefixed with <code className="font-mono">"chain-name:"</code> and suffixed with the
-                  7930 hex via either{" "}
+                  Pass a key prefixed with <code className="font-mono">"chain-name:"</code> and suffixed with the raw 7930 bytes (latin‑1 string carrying raw bytes) via either{" "}
                   <code className="font-mono">text(bytes32,string)</code> or{" "}
                   <code className="font-mono">data(bytes32,string)</code>; the resolver returns the chain name. This
                   uses service key parameters per{" "}
@@ -147,7 +152,7 @@ export default function LearnPage() {
                 <ul className="list-disc pl-5 space-y-0.5">
                   <li>
                     serviceKey (string):{" "}
-                    <code className="font-mono">"chain-name:&lt;7930-hex&gt;"</code>
+                    <code className="font-mono">"chain-name:" + &lt;raw 7930 bytes&gt;</code>
                   </li>
                   <li>
                     Calls:
@@ -161,7 +166,7 @@ export default function LearnPage() {
                       <div>
                         •{" "}
                         <code className="font-mono">
-                          resolve(name, encode(data(labelhash, dataKey)))
+                          resolve(name, encode(data(labelhash, serviceKey)))
                         </code>
                       </div>
                     </div>

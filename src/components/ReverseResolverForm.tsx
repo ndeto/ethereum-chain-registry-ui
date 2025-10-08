@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import type { Abi } from 'viem';
-import { Interface, AbiCoder, getBytes, hexlify, concat, dnsEncode, toUtf8Bytes } from 'ethers';
+import { Interface, AbiCoder, getBytes, dnsEncode } from 'ethers';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { CHAIN_RESOLVER_ABI } from '@/lib/abis';
 
@@ -58,19 +58,31 @@ const ReverseResolverForm: React.FC = () => {
       setHasResolved(false);
       setIsResolving(true);
 
-      // ENSIP‑10: Reverse via data(node, key = abi.encode('chain-name:') || chainIdBytes)
-      const dataIface = new Interface(['function data(bytes32,bytes) view returns (bytes)']);
-      // Key must be raw bytes: UTF-8("chain-name:") || chainIdBytes
-      const keyBytes = hexlify(concat([toUtf8Bytes('chain-name:'), getBytes(id)]));
-      const call = dataIface.encodeFunctionData('data', ['0x' + '00'.repeat(32), keyBytes]);
+      // ENSIP‑10: Reverse via data(node, keyString) with keyString = "chain-name:" + raw 7930 bytes
+      // Build a latin-1 string carrying raw bytes for the key
+      const hexFromLatin1 = (s: string) => '0x' + Array.from(s, (c) => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+      const keyString = (() => {
+        const prefix = 'chain-name:';
+        const bytes = getBytes(id);
+        let raw = '';
+        for (let i = 0; i < bytes.length; i++) raw += String.fromCharCode(bytes[i]);
+        return prefix + raw;
+      })();
+
+      const dataIface = new Interface(['function data(bytes32,string) view returns (bytes)']);
+      const zeroNode = ('0x' + '00'.repeat(32)) as `0x${string}`;
+      const call = dataIface.encodeFunctionData('data(bytes32,string)', [zeroNode, keyString]);
       const dnsName = dnsEncode('x.cid.eth', 255) as `0x${string}`;
+
       const answer = await (publicClient as any)!.readContract({
         address: reverseAddr as `0x${string}`,
         abi: CHAIN_RESOLVER_ABI as unknown as Abi,
         functionName: 'resolve',
         args: [dnsName, call as `0x${string}`]
       }) as `0x${string}`;
-      const [encoded] = (new Interface(['function data(bytes32,bytes) view returns (bytes)']).decodeFunctionResult('data', answer) as unknown as [`0x${string}`]);
+      console.log('[reverse] resolve answer', answer);
+      const [encoded] = (new Interface(['function data(bytes32,string) view returns (bytes)']).decodeFunctionResult('data(bytes32,string)', answer) as unknown as [`0x${string}`]);
+      console.log('[reverse] decoded bytes result', encoded);
 
       let out = '';
       try {

@@ -140,19 +140,17 @@ export default function LearnPage() {
               <section className="space-y-2">
                 <div className="font-semibold text-foreground">Reverse Resolution</div>
                 <p className="text-muted-foreground">
-                  Pass a key prefixed with <code className="font-mono">"chain-name:"</code> and suffixed with the raw 7930 bytes (latin‑1 string carrying raw bytes) via either{" "}
-                  <code className="font-mono">text(bytes32,string)</code> or{" "}
-                  <code className="font-mono">data(bytes32,string)</code>; the resolver returns the chain name. This
-                  uses service key parameters per{" "}
-                  <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md">ENSIP‑TBD‑17</a>{" "}
-                  and supports the <code className="font-mono">data()</code> path per{" "}
-                  <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md">ENSIP‑TBD‑19</a>.
+                  Reverse lookups use ENS text records. Build a key prefixed with
+                  <code className="font-mono">"chain-name:"</code> and suffixed with the 7930 hex, then call
+                  <code className="font-mono"> text(bytes32,string) </code> via the Extended Resolver. This
+                  follows service key parameters per{" "}
+                  <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md">ENSIP‑TBD‑17</a>.
                   For example:
                 </p>
                 <ul className="list-disc pl-5 space-y-0.5">
                   <li>
-                    serviceKey (string):{" "}
-                    <code className="font-mono">"chain-name:" + &lt;raw 7930 bytes&gt;</code>
+                    textKey (string):{" "}
+                    <code className="font-mono">"chain-name:" + &lt;7930-hex&gt;</code>
                   </li>
                   <li>
                     Calls:
@@ -161,12 +159,6 @@ export default function LearnPage() {
                         •{" "}
                         <code className="font-mono">
                           resolve(name, encode(text(labelhash, serviceKey)))
-                        </code>
-                      </div>
-                      <div>
-                        •{" "}
-                        <code className="font-mono">
-                          resolve(name, encode(data(labelhash, serviceKey)))
                         </code>
                       </div>
                     </div>

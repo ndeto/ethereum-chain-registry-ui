@@ -35,11 +35,15 @@ const RegisterMinimalForm: React.FC = () => {
   const ETHERSCAN_BASE = 'https://sepolia.etherscan.io';
 
   const handleEditInputs = () => {
+    // Unlock and reset state
     setInputsLocked(false);
     setSubmitting(false);
     setRegStatus('idle');
     setRegTxHash('');
     setResult(null);
+    // Clear form inputs
+    setLabel('');
+    setChainIdHex('');
   };
 
   const validAddr = (x?: string) => !!x && /^0x[a-fA-F0-9]{40}$/.test(x) && x !== '0x0000000000000000000000000000000000000000';
@@ -126,6 +130,8 @@ const RegisterMinimalForm: React.FC = () => {
       const msg = e?.shortMessage || e?.reason || e?.message || 'Transaction failed.';
       toast({ variant: 'destructive', title: 'Register Failed', description: msg });
       setRegStatus('error');
+      // hide any previous tx link on failure
+      setRegTxHash('');
       setInputsLocked(false);
     } finally {
       setSubmitting(false);
@@ -152,8 +158,8 @@ const RegisterMinimalForm: React.FC = () => {
             <div className="text-xs text-muted-foreground">Example: <code className="font-mono">0x000000010001010a00</code></div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={onSubmit} disabled={submitting || switching || regStatus === 'pending'} className="w-full">
+        <div className="flex flex-col gap-2">
+          <Button onClick={onSubmit} disabled={submitting || switching || regStatus === 'pending' || inputsLocked} className="w-full disabled:cursor-not-allowed">
             {submitting || regStatus === 'pending' ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -161,13 +167,29 @@ const RegisterMinimalForm: React.FC = () => {
               </>
             ) : (
               'Register'
-            )}
+          )}
           </Button>
+          {/* inline status message for quick visibility */}
+          {regStatus === 'pending' && (
+            <div className="text-xs text-foreground/80">Submitting transaction…</div>
+          )}
+          {regStatus === 'confirmed' && (
+            <div className="text-xs text-green-600 dark:text-green-400">Success: label registered.</div>
+          )}
+          {regStatus === 'error' && (
+            <div className="text-xs text-red-600 dark:text-red-400">Failed to register. Please check your wallet and try again.</div>
+          )}
         </div>
 
-        {regTxHash && (
+        {regTxHash && regStatus === 'confirmed' && (
           <div className="pl-0 text-xs text-muted-foreground">
             <a className="underline" href={`${ETHERSCAN_BASE}/tx/${regTxHash}`} target="_blank" rel="noreferrer">View transaction on Etherscan</a>
+          </div>
+        )}
+
+        {(regStatus === 'confirmed' || regStatus === 'error') && (
+          <div className="pt-2">
+            <Button variant="outline" onClick={handleEditInputs} className="w-full">Register Another</Button>
           </div>
         )}
 
@@ -187,7 +209,7 @@ const RegisterMinimalForm: React.FC = () => {
               <code className="font-mono break-all">{result.chainId}</code>
             </div>
             <div className="mt-3 space-y-1">
-              <Link href={`/resolve?label=${encodeURIComponent(result.label)}`} className="inline-block">
+              <Link href={`/resolve?label=${encodeURIComponent(result.label)}&auto=1`} className="inline-block">
                 <Button variant="secondary">Test Resolution</Button>
               </Link>
               <div className="text-xs text-muted-foreground">

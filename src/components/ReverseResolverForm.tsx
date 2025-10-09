@@ -58,45 +58,57 @@ const ReverseResolverForm: React.FC = () => {
       setHasResolved(false);
       setIsResolving(true);
 
-      // ENSIP‑10: Reverse via data(node, keyString) with keyString = "chain-name:" + raw 7930 bytes
-      // Build a latin-1 string carrying raw bytes for the key
-      const hexFromLatin1 = (s: string) => '0x' + Array.from(s, (c) => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
-      const keyString = (() => {
-        const prefix = 'chain-name:';
-        const bytes = getBytes(id);
-        let raw = '';
-        for (let i = 0; i < bytes.length; i++) raw += String.fromCharCode(bytes[i]);
-        return prefix + raw;
-      })();
+      // Build hex-suffix service key and resolve via text(bytes32,string) only
+      const cidBytes = getBytes(id);
+      const keyString = 'chain-name:' + Array.from(cidBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 
-      const dataIface = new Interface(['function data(bytes32,string) view returns (bytes)']);
       const zeroNode = ('0x' + '00'.repeat(32)) as `0x${string}`;
-      const call = dataIface.encodeFunctionData('data(bytes32,string)', [zeroNode, keyString]);
       const dnsName = dnsEncode('x.cid.eth', 255) as `0x${string}`;
-
-      const answer = await (publicClient as any)!.readContract({
-        address: reverseAddr as `0x${string}`,
-        abi: CHAIN_RESOLVER_ABI as unknown as Abi,
-        functionName: 'resolve',
-        args: [dnsName, call as `0x${string}`]
-      }) as `0x${string}`;
-      console.log('[reverse] resolve answer', answer);
-      const [encoded] = (new Interface(['function data(bytes32,string) view returns (bytes)']).decodeFunctionResult('data(bytes32,string)', answer) as unknown as [`0x${string}`]);
-      console.log('[reverse] decoded bytes result', encoded);
-
-      let out = '';
+      // Try text(bytes32,string) first (returns string directly)
       try {
-        const decoded = AbiCoder.defaultAbiCoder().decode(['string'], encoded) as unknown as [string];
-        [out] = decoded;
-      } catch {
-        const hex = (encoded as string).replace(/^0x/, '');
-        out = Buffer.from(hex, 'hex').toString('utf8');
+        const tIface = new Interface(['function text(bytes32,string) view returns (string)']);
+        const tcall = tIface.encodeFunctionData('text(bytes32,string)', [zeroNode, keyString]);
+        const tAnswer = await (publicClient as any)!.readContract({
+          address: reverseAddr as `0x${string}`,
+          abi: CHAIN_RESOLVER_ABI as unknown as Abi,
+          functionName: 'resolve',
+          args: [dnsName, tcall as `0x${string}`]
+        }) as `0x${string}`;
+        const [textName] = (new Interface(['function text(bytes32,string) view returns (string)']))
+          .decodeFunctionResult('text(bytes32,string)', tAnswer) as unknown as [string];
+        if (textName && textName.length) {
+          setResolvedName(textName);
+          setHasResolved(true);
+          toast({ title: 'Reverse Resolved', description: 'Chain name resolved from chain ID.' });
+          return;
+        }
+      } catch (e) {
+        console.warn('[reverse] text(bytes32,string) path failed', e);
       }
-      console.log('[reverse] decoded name', out);
-      setResolvedName(out);
-      setHasResolved(true);
 
-      toast({ title: 'Reverse Resolved', description: 'Chain name resolved from chain ID.' });
+      // Fallback: direct chainName(bytes) if text() returned empty
+      {
+        try {
+          const name = await (publicClient as any)!.readContract({
+            address: reverseAddr as `0x${string}`,
+            abi: CHAIN_RESOLVER_ABI as unknown as Abi,
+            functionName: 'chainName',
+            args: [id as `0x${string}`],
+          }) as string;
+          if (name && name.length) {
+            console.log('[reverse] direct chainName(bytes) result', name);
+            setResolvedName(name);
+            setHasResolved(true);
+            toast({ title: 'Reverse Resolved', description: 'Chain name resolved from chain ID.' });
+            return;
+          }
+        } catch (e) {
+          console.warn('[reverse] chainName(bytes) fallback failed', e);
+        }
+      }
+      // No result found
+      setResolvedName('');
+      setHasResolved(true);
     } catch (e: any) {
       console.error('[reverse] error', e);
       toast({ variant: 'destructive', title: 'Reverse Resolve Failed', description: e?.shortMessage || e?.reason || e?.message || 'Failed to reverse resolve chain ID.' });
@@ -117,7 +129,11 @@ const ReverseResolverForm: React.FC = () => {
         <Card className="border border-primary/10 bg-background/50 shadow-none">
           <CardHeader>
             <CardTitle>Reverse Resolution</CardTitle>
-            <CardDescription>Lookup chain label by its 7930 chain identifier</CardDescription>
+            <CardDescription>
+              Lookup a chain label by its
+              {' '}<a className="underline" href="https://eips.ethereum.org/EIPS/eip-7930" target="_blank" rel="noreferrer">ERC‑7930</a>{' '}
+              chain identifier
+            </CardDescription>
 
           </CardHeader>
           <CardContent className="space-y-4">
@@ -129,7 +145,7 @@ const ReverseResolverForm: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => void handleReverse()} disabled={isResolving} className="w-full">
+              <Button onClick={() => void handleReverse()} disabled={isResolving || !chainIdHex.trim()} className="w-full disabled:cursor-not-allowed">
                 {isResolving ? 'Resolving…' : 'Reverse Resolve'}
               </Button>
             </div>
@@ -145,11 +161,15 @@ const ReverseResolverForm: React.FC = () => {
 
             {hasResolved && (
               <div className="mt-4 p-4 rounded-md border border-primary/10 bg-secondary/30">
-                <div className="text-sm break-all">
-                  <span>{chainIdHex}</span>
-                  <span className="mx-2 opacity-70">→</span>
-                  <span>{resolvedName || '—'}</span>
-                </div>
+                {resolvedName ? (
+                  <div className="text-sm break-all">
+                    <span>{chainIdHex}</span>
+                    <span className="mx-2 opacity-70">→</span>
+                    <span>{resolvedName}</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">This isn’t a registered identifier.</div>
+                )}
               </div>
             )}
           </CardContent>

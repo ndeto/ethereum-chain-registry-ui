@@ -23,15 +23,20 @@ const ChainResolverForm: React.FC = () => {
   const [resolvedChainIdHex, setResolvedChainIdHex] = useState<string>('');
   const [resolvedName, setResolvedName] = useState<string>('');
   const [showInlineLoading, setShowInlineLoading] = useState<boolean>(false);
+  const [forwardTried, setForwardTried] = useState<boolean>(false);
 
   // Removed legacy copy helpers and sections for a leaner UI
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const qLabel = params.get('label');
+      const auto = params.get('auto');
       if (qLabel) {
         setInputName(qLabel.toLowerCase());
-        // Do not auto-resolve; let the user click the button
+        if (auto && auto !== '0' && auto !== 'false') {
+          // auto‑resolve when coming from Register/Test Resolution
+          setTimeout(() => handleResolve(qLabel), 0);
+        }
       }
     } catch { }
   }, []);
@@ -58,6 +63,7 @@ const ChainResolverForm: React.FC = () => {
       setTimeout(() => setShowInlineLoading(false), 800);
 
       setIsResolving(true);
+      setForwardTried(false);
       // Forward mapping via ENSIP-10: resolver.resolve(dnsEncode, encode(text(node,"chain-id")))
       const labelHash = keccak256(toUtf8Bytes(name));
       const textIface = new Interface(['function text(bytes32,string) view returns (string)']);
@@ -71,8 +77,18 @@ const ChainResolverForm: React.FC = () => {
       }) as `0x${string}`;
       // ethers v6 returns a Result type; cast via unknown to satisfy TS
       const [hexNo0x] = (textIface.decodeFunctionResult('text', chainIdAnswer) as unknown as [string]);
+      // Treat empty, '0x', or non-hex strings as not registered
+      const isHex = typeof hexNo0x === 'string' && /^[0-9a-fA-F]+$/.test(hexNo0x);
+      if (!hexNo0x || hexNo0x.length === 0 || !isHex) {
+        // No record found for this label
+        setResolvedChainIdHex('');
+        setForwardTried(true);
+        setIsResolving(false);
+        return;
+      }
       const chainIdHex = `0x${hexNo0x}`;
       setResolvedChainIdHex(chainIdHex);
+      setForwardTried(true);
       toast({ title: 'Resolved', description: 'Chain ID resolved via resolver.' });
 
       // Do not mutate URL; params are only used when arriving from Register
@@ -160,7 +176,7 @@ const ChainResolverForm: React.FC = () => {
                 <div className="text-xs text-muted-foreground">Full name: <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code></div>
               </div>
             </div>
-            <Button type="button" onClick={() => handleResolve()} disabled={!inputName.trim() || isResolving} className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3">
+            <Button type="button" onClick={() => handleResolve()} disabled={!inputName.trim() || isResolving} className="w-full bg-primary hover:shadow-glow transition-smooth text-primary-foreground font-semibold py-3 disabled:cursor-not-allowed">
               {isResolving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -184,26 +200,32 @@ const ChainResolverForm: React.FC = () => {
               </div>
             )}
 
-            {!isResolving && !showInlineLoading && resolvedChainIdHex && (
+            {!isResolving && !showInlineLoading && forwardTried && (
               <div className="mt-4 space-y-4">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
-                  <span className="opacity-70">→</span>
-                  <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}`} className="underline">
-                    <code className="font-mono break-all">{resolvedChainIdHex}</code>
-                  </Link>
-                </div>
-                {resolvedName && (
-                  <div className="text-sm text-muted-foreground">Name: <code className="font-mono">{resolvedName}</code></div>
+                {resolvedChainIdHex && resolvedChainIdHex !== '0x' ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <code className="font-mono">{(inputName || '<label>') + '.cid.eth'}</code>
+                      <span className="opacity-70">→</span>
+                      <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}&auto=1`} className="underline">
+                        <code className="font-mono break-all">{resolvedChainIdHex}</code>
+                      </Link>
+                    </div>
+                    {resolvedName && (
+                      <div className="text-sm text-muted-foreground">Name: <code className="font-mono">{resolvedName}</code></div>
+                    )}
+                    <div className="pt-1 space-y-1">
+                      <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}&auto=1`} className="inline-block">
+                        <Button variant="secondary">Reverse Resolve</Button>
+                      </Link>
+                      <div className="text-xs text-muted-foreground">
+                        Opens the Reverse page to look up the human‑readable label from this chain identifier.
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">This isn’t a registered label.</div>
                 )}
-                <div className="pt-1 space-y-1">
-                  <Link href={`/reverse?chainId=${encodeURIComponent(resolvedChainIdHex)}`} className="inline-block">
-                    <Button variant="secondary">Reverse Resolve</Button>
-                  </Link>
-                  <div className="text-xs text-muted-foreground">
-                    Opens the Reverse page to look up the human‑readable label from this chain identifier.
-                  </div>
-                </div>
               </div>
             )}
           </CardContent>

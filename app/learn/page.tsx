@@ -15,7 +15,7 @@ export default function LearnPage() {
             <code className="font-mono">base</code>) to an{" "}
             <a
               className="underline"
-              href="https://eips.ethereum.org/EIPS/eip-7930"
+              href="https://github.com/unruggable-labs/ERCs/blob/6c8675a8144ceb233c31263adfdd8dfc35ef684e/ERCS/erc-7930.md"
               target="_blank"
               rel="noreferrer"
             >
@@ -30,7 +30,6 @@ export default function LearnPage() {
             >
               ENSIP-10
             </a>
-            .
           </p>
           <p className="text-xs text-muted-foreground">
             Looking for a deeper dive? Read the contracts README{" "}
@@ -78,6 +77,11 @@ export default function LearnPage() {
                 <code className="font-mono">labelhash = keccak256(bytes(label))</code>{" "}
                 for the left‑most label (e.g., <code className="font-mono">label = "optimism"</code>).
               </p>
+              <p>
+                Enumerate registered chains via <code className="font-mono">chainCount()</code> and
+                <code className="font-mono">{" "}getChainAtIndex(uint256)</code>, which return each stored label and its
+                associated chain name without relying on an off-chain index.
+              </p>
 
               {/* Combined forward + reverse flow diagram */}
               <div className="w-full overflow-hidden rounded-lg border border-primary/10 bg-muted/10 flex justify-center">
@@ -102,8 +106,17 @@ export default function LearnPage() {
                   >
                     ENSIP-5
                   </a>
-                  ) returns the chain’s 7930 ID as a hex string. This value is written at registration by the
-                  contract owner (e.g., a multisig) and the resolver ignores any user-set text under that key. To
+                  ) returns the chain’s 7930 ID as a hex string. The data field {" "}
+                  <code className="font-mono">data(..., "chain-id")</code> (see{" "}
+                  <a
+                    className="underline"
+                    href="https://raw.githubusercontent.com/unruggable-labs/ensips/3f181f3be82b140ebc30d4d7caa6242520246dd6/ensips/24.md"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    ENSIP-24
+                  </a>
+                  ) returns the raw bytes. These values are written at registration by the contract owner (e.g., a multisig) and the resolver ignores user-set overrides. To
                   resolve a chain ID:
                 </p>
                 <ul className="list-disc pl-5 space-y-0.5">
@@ -141,7 +154,7 @@ export default function LearnPage() {
                 <div className="font-semibold text-foreground">Reverse Resolution</div>
                 <p className="text-muted-foreground">
                   Reverse lookups use ENS text records. Build a key prefixed with
-                  <code className="font-mono">"chain-name:"</code> and suffixed with the 7930 hex, then call
+                  <code className="font-mono">"chain-name:"</code> and suffixed with the 7930 hex (without a leading <code className="font-mono">0x</code>), then call
                   <code className="font-mono"> text(bytes32,string) </code> via the Extended Resolver. This
                   follows service key parameters per{" "}
                   <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-17.md">ENSIP‑TBD‑17</a>.
@@ -150,7 +163,8 @@ export default function LearnPage() {
                 <ul className="list-disc pl-5 space-y-0.5">
                   <li>
                     textKey (string):{" "}
-                    <code className="font-mono">"chain-name:" + &lt;7930-hex&gt;</code>
+                    <code className="font-mono">"chain-name:" + &lt;7930-hex&gt;</code> (for example,
+                    <code className="font-mono">"chain-name:00010001010a00"</code>)
                   </li>
                   <li>
                     Calls:
@@ -195,7 +209,7 @@ export default function LearnPage() {
               We use the chain identifier with a zero address from{" "}
               <a
                 className="underline"
-                href="https://eips.ethereum.org/EIPS/eip-7930"
+              href="https://github.com/unruggable-labs/ERCs/blob/6c8675a8144ceb233c31263adfdd8dfc35ef684e/ERCS/erc-7930.md"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -277,7 +291,7 @@ export default function LearnPage() {
                 Chain Resolver — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/chain-resolver">GitHub repo</a>
               </li>
               <li>
-                ERC‑7930 — <a className="underline" target="_blank" rel="noreferrer" href="https://eips.ethereum.org/EIPS/eip-7930">Chain‑aware addresses (used here for chain identifiers)</a>
+                ERC‑7930 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/unruggable-labs/ERCs/blob/6c8675a8144ceb233c31263adfdd8dfc35ef684e/ERCS/erc-7930.md">Chain‑aware addresses (used here for chain identifiers)</a>
               </li>
               <li>
                 CAIP‑2 — <a className="underline" target="_blank" rel="noreferrer" href="https://chainagnostic.org/CAIPs/caip-2">Blockchain ID mapping</a>
@@ -301,7 +315,7 @@ export default function LearnPage() {
                 ENSIP‑TBD‑18 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-18.md">Global <code className="font-mono">chain-id</code> text record</a>
               </li>
               <li>
-                ENSIP‑TBD‑19 — <a className="underline" target="_blank" rel="noreferrer" href="https://github.com/nxt3d/ensips/blob/ensip-ideas/ensips/ensip-TBD-19.md"><code className="font-mono">data()</code> records</a>
+                ENSIP‑24 — <a className="underline" target="_blank" rel="noreferrer" href="https://raw.githubusercontent.com/unruggable-labs/ensips/3f181f3be82b140ebc30d4d7caa6242520246dd6/ensips/24.md"><code className="font-mono">data()</code> records</a>
               </li>
               <li>
                 ENSIP‑11 — <a className="underline" target="_blank" rel="noreferrer" href="https://docs.ens.domains/ensip/11">Coin types and formats</a>

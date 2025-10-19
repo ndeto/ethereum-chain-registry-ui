@@ -131,7 +131,7 @@ const ReverseResolverForm: React.FC = () => {
             <CardTitle>Reverse Resolution</CardTitle>
             <CardDescription>
               Lookup a chain label by its
-              {' '}<a className="underline" href="https://eips.ethereum.org/EIPS/eip-7930" target="_blank" rel="noreferrer">ERC‑7930</a>{' '}
+              {' '}<a className="underline" href="https://github.com/unruggable-labs/ERCs/blob/6c8675a8144ceb233c31263adfdd8dfc35ef684e/ERCS/erc-7930.md" target="_blank" rel="noreferrer">ERC‑7930</a>{' '}
               chain identifier
             </CardDescription>
 

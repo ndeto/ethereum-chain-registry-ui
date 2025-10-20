@@ -147,6 +147,17 @@ export default function LearnPage() {
                     </ul>
                   </li>
                 </ul>
+                <div className="mt-3" />
+                <p className="text-muted-foreground">
+                  You can also read the canonical human‑readable chain name for a label using the
+                  forward <code className="font-mono">chain-name</code> text key:
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>
+                    <code className="font-mono">resolve(name, encode(text(labelhash, "chain-name")))</code>
+                    {" "}→ returns the chain name (e.g., <code className="font-mono">"Optimism"</code>).
+                  </li>
+                </ul>
               </section>
 
               {/* Reverse */}

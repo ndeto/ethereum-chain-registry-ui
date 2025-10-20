@@ -13,7 +13,7 @@ export const CHAIN_RESOLVER_ABI = [
   {
     inputs: [
       { internalType: "address", name: "_caller", type: "address" },
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
     ],
     name: "NotAuthorized",
     type: "error",
@@ -34,7 +34,71 @@ export const CHAIN_RESOLVER_ABI = [
       {
         indexed: true,
         internalType: "bytes32",
-        name: "_labelHash",
+        name: "_labelhash",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "_owner",
+        type: "address",
+      },
+    ],
+    name: "AddrChanged",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "bytes32", name: "node", type: "bytes32" },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "coinType",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "bytes",
+        name: "newAddress",
+        type: "bytes",
+      },
+    ],
+    name: "AddressChanged",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "node",
+        type: "bytes32",
+      },
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "keyHash",
+        type: "bytes32",
+      },
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "dataHash",
+        type: "bytes32",
+      },
+    ],
+    name: "DataChanged",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "_labelhash",
         type: "bytes32",
       },
       {
@@ -97,7 +161,7 @@ export const CHAIN_RESOLVER_ABI = [
       {
         indexed: true,
         internalType: "bytes32",
-        name: "_labelHash",
+        name: "_labelhash",
         type: "bytes32",
       },
       {
@@ -139,6 +203,13 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [],
+    name: "CHAIN_NAME_KEY",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "CHAIN_NAME_PREFIX",
     outputs: [{ internalType: "string", name: "", type: "string" }],
     stateMutability: "view",
@@ -174,6 +245,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
+      { internalType: "string[]", name: "_labels", type: "string[]" },
       { internalType: "string[]", name: "_chainNames", type: "string[]" },
       { internalType: "address[]", name: "_owners", type: "address[]" },
       { internalType: "bytes[]", name: "_chainIds", type: "bytes[]" },
@@ -184,7 +256,14 @@ export const CHAIN_RESOLVER_ABI = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
+    inputs: [],
+    name: "chainCount",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "_labelhash", type: "bytes32" }],
     name: "chainId",
     outputs: [{ internalType: "bytes", name: "_chainId", type: "bytes" }],
     stateMutability: "view",
@@ -199,8 +278,8 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
+      { internalType: "string", name: "_label", type: "string" },
       { internalType: "string", name: "_chainName", type: "string" },
-      { internalType: "address", name: "_owner", type: "address" },
       { internalType: "bytes", name: "_chainId", type: "bytes" },
     ],
     name: "demoRegister",
@@ -210,16 +289,26 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "uint256", name: "_coinType", type: "uint256" },
     ],
     name: "getAddr",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
+    outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
     stateMutability: "view",
     type: "function",
   },
   {
-    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
+    inputs: [{ internalType: "uint256", name: "_index", type: "uint256" }],
+    name: "getChainAtIndex",
+    outputs: [
+      { internalType: "string", name: "_label", type: "string" },
+      { internalType: "string", name: "_chainName", type: "string" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "_labelhash", type: "bytes32" }],
     name: "getContenthash",
     outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
     stateMutability: "view",
@@ -227,8 +316,8 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "bytes", name: "_key", type: "bytes" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
+      { internalType: "string", name: "_key", type: "string" },
     ],
     name: "getData",
     outputs: [{ internalType: "bytes", name: "", type: "bytes" }],
@@ -236,7 +325,7 @@ export const CHAIN_RESOLVER_ABI = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "bytes32", name: "_labelHash", type: "bytes32" }],
+    inputs: [{ internalType: "bytes32", name: "_labelhash", type: "bytes32" }],
     name: "getOwner",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
@@ -244,7 +333,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "string", name: "_key", type: "string" },
     ],
     name: "getText",
@@ -254,7 +343,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "address", name: "_address", type: "address" },
     ],
     name: "isAuthorized",
@@ -271,6 +360,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
+      { internalType: "string", name: "_label", type: "string" },
       { internalType: "string", name: "_chainName", type: "string" },
       { internalType: "address", name: "_owner", type: "address" },
       { internalType: "bytes", name: "_chainId", type: "bytes" },
@@ -299,8 +389,18 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "uint256", name: "_coinType", type: "uint256" },
+      { internalType: "bytes", name: "_value", type: "bytes" },
+    ],
+    name: "setAddr",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "address", name: "_addr", type: "address" },
     ],
     name: "setAddr",
@@ -310,7 +410,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "bytes", name: "_hash", type: "bytes" },
     ],
     name: "setContenthash",
@@ -320,8 +420,8 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
-      { internalType: "bytes", name: "_key", type: "bytes" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
+      { internalType: "string", name: "_key", type: "string" },
       { internalType: "bytes", name: "_data", type: "bytes" },
     ],
     name: "setData",
@@ -331,7 +431,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "address", name: "_owner", type: "address" },
     ],
     name: "setLabelOwner",
@@ -351,7 +451,7 @@ export const CHAIN_RESOLVER_ABI = [
   },
   {
     inputs: [
-      { internalType: "bytes32", name: "_labelHash", type: "bytes32" },
+      { internalType: "bytes32", name: "_labelhash", type: "bytes32" },
       { internalType: "string", name: "_key", type: "string" },
       { internalType: "string", name: "_value", type: "string" },
     ],

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { usePublicClient } from 'wagmi';
 import type { Abi } from 'viem';
-import { Interface, AbiCoder, getBytes, dnsEncode } from 'ethers';
+import { Interface, AbiCoder, getBytes, dnsEncode, namehash } from 'ethers';
 import { CHAIN_RESOLVER_ADDRESS } from '@/lib/addresses';
 import { CHAIN_RESOLVER_ABI } from '@/lib/abis';
 
@@ -62,12 +62,11 @@ const ReverseResolverForm: React.FC = () => {
       const cidBytes = getBytes(id);
       const keyString = 'chain-name:' + Array.from(cidBytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 
-      const zeroNode = ('0x' + '00'.repeat(32)) as `0x${string}`;
-      const dnsName = dnsEncode('x.cid.eth', 255) as `0x${string}`;
-      // Try text(bytes32,string) first (returns string directly)
+      const node = namehash('reverse.cid.eth');
+      const dnsName = dnsEncode('reverse.cid.eth', 255);
       try {
         const tIface = new Interface(['function text(bytes32,string) view returns (string)']);
-        const tcall = tIface.encodeFunctionData('text(bytes32,string)', [zeroNode, keyString]);
+        const tcall = tIface.encodeFunctionData('text(bytes32,string)', [node, keyString]);
         const tAnswer = await (publicClient as any)!.readContract({
           address: reverseAddr as `0x${string}`,
           abi: CHAIN_RESOLVER_ABI as unknown as Abi,
@@ -84,27 +83,6 @@ const ReverseResolverForm: React.FC = () => {
         }
       } catch (e) {
         console.warn('[reverse] text(bytes32,string) path failed', e);
-      }
-
-      // Fallback: direct chainName(bytes) if text() returned empty
-      {
-        try {
-          const name = await (publicClient as any)!.readContract({
-            address: reverseAddr as `0x${string}`,
-            abi: CHAIN_RESOLVER_ABI as unknown as Abi,
-            functionName: 'chainName',
-            args: [id as `0x${string}`],
-          }) as string;
-          if (name && name.length) {
-            console.log('[reverse] direct chainName(bytes) result', name);
-            setResolvedName(name);
-            setHasResolved(true);
-            toast({ title: 'Reverse Resolved', description: 'Chain name resolved from chain ID.' });
-            return;
-          }
-        } catch (e) {
-          console.warn('[reverse] chainName(bytes) fallback failed', e);
-        }
       }
       // No result found
       setResolvedName('');

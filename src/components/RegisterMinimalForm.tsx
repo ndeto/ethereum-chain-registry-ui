@@ -25,9 +25,10 @@ const RegisterMinimalForm: React.FC = () => {
   const { toast } = useToast();
 
   const [label, setLabel] = useState<string>('');
+  const [chainName, setChainName] = useState<string>('');
   const [chainIdHex, setChainIdHex] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ label: string; chainId: string } | null>(null);
+  const [result, setResult] = useState<{ label: string; chainName: string; chainId: string } | null>(null);
   type StepStatus = 'idle' | 'pending' | 'confirmed' | 'error';
   const [regStatus, setRegStatus] = useState<StepStatus>('idle');
   const [inputsLocked, setInputsLocked] = useState(false);
@@ -43,6 +44,7 @@ const RegisterMinimalForm: React.FC = () => {
     setResult(null);
     // Clear form inputs
     setLabel('');
+    setChainName('');
     setChainIdHex('');
   };
 
@@ -57,9 +59,14 @@ const RegisterMinimalForm: React.FC = () => {
       return;
     }
     const name = label.trim().toLowerCase();
+    const cName = chainName.trim();
     const cid = chainIdHex.trim();
     if (!name) {
       toast({ variant: 'destructive', title: 'Invalid Label', description: 'Enter a non-empty label (e.g., base).' });
+      return;
+    }
+    if (!cName) {
+      toast({ variant: 'destructive', title: 'Invalid Chain Name', description: 'Enter a non-empty chain name (e.g., Base).' });
       return;
     }
     if (!isHexBytes(cid)) {
@@ -115,7 +122,7 @@ const RegisterMinimalForm: React.FC = () => {
         address: resolver,
         abi: CHAIN_RESOLVER_ABI as unknown as Abi,
         functionName: 'demoRegister',
-        args: [name, account as `0x${string}`, cid],
+        args: [name, cName, cid],
       } as any);
       setRegTxHash(tx as string);
       {
@@ -124,7 +131,7 @@ const RegisterMinimalForm: React.FC = () => {
       }
       setRegStatus('confirmed');
       toast({ title: 'Registered', description: 'Label registered with resolver.' });
-      setResult({ label: name, chainId: cid });
+      setResult({ label: name, chainName: cName, chainId: cid });
       try { sessionStorage.setItem('justRegisteredLabel', name); } catch {}
     } catch (e: any) {
       const msg = e?.shortMessage || e?.reason || e?.message || 'Transaction failed.';
@@ -153,9 +160,14 @@ const RegisterMinimalForm: React.FC = () => {
             <div className="text-xs text-muted-foreground">Full name will be <code className="font-mono">{(label || '<label>')}.cid.eth</code></div>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="chainName">Chain Name</Label>
+            <Input id="chainName" placeholder="e.g., Base" value={chainName} disabled={inputsLocked} onChange={(e) => setChainName(e.target.value)} />
+            <div className="text-xs text-muted-foreground">Human-readable chain name associated with this label.</div>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="cid">Chain Identifier (hex bytes)</Label>
             <Input id="cid" placeholder="0x…" value={chainIdHex} disabled={inputsLocked} onChange={(e) => setChainIdHex(e.target.value)} />
-            <div className="text-xs text-muted-foreground">Example: <code className="font-mono">0x000000010001010a00</code></div>
+            <div className="text-xs text-muted-foreground">Example: <code className="font-mono">0x00010001010a00</code></div>
           </div>
         </div>
         <div className="flex flex-col gap-2">
@@ -207,6 +219,9 @@ const RegisterMinimalForm: React.FC = () => {
               <code className="font-mono">{result.label}.cid.eth</code>
               <span className="opacity-70">→</span>
               <code className="font-mono break-all">{result.chainId}</code>
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Chain Name: <code className="font-mono">{result.chainName}</code>
             </div>
             <div className="mt-3 space-y-1">
               <Link href={`/resolve?label=${encodeURIComponent(result.label)}&auto=1`} className="inline-block">
